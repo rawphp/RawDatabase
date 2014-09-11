@@ -1,0 +1,27 @@
+{
+    "name": "rawphp/raw-database",
+    "type": "library",
+    "description": "RawDatabase is a wrapper with useful utility functions around the MySQLi class and is used by RawPHP and other applications.",
+    "keywords": [ "database", "mysql", "mydqli" ],
+    "homepage": "http://rawphp.org",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Tom Kaczocha",
+            "email": "tom@rawphp.org"
+        }
+    ],
+    "require": {
+        "php": ">=5.4.0",
+        "phpunit/phpunit": "4.2.5"
+    },
+    "require-dev": {
+        "rawphp/raw-base": "dev-master",
+        "squizlabs/php_codesniffer": "1.*"
+    },
+    "autoload": {
+        "classmap": [
+            "lib/"
+        ]
+    }
+}
