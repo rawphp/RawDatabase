@@ -13,10 +13,10 @@
     ],
     "require": {
         "php": ">=5.4.0",
-        "phpunit/phpunit": "4.2.5"
+        "rawphp/raw-base": "dev-master"
     },
     "require-dev": {
-        "rawphp/raw-base": "dev-master",
+        "phpunit/phpunit": "4.2.5",
         "squizlabs/php_codesniffer": "1.*"
     },
     "autoload": {
