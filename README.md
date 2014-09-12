@@ -63,7 +63,7 @@ $results = $db->query( "SELECT * FROM users" );
 $username = $db->prepareString( $user->username );
 
 // insert returns the new record ID
-$id = $db->insert( "INSERT INTO users ( user_name ) VALUES ( 'username' )" );
+$id = $db->insert( "INSERT INTO users ( user_name ) VALUES ( '$username' )" );
 
 // add table
 $result = $db->createTable( 'users', array( 
