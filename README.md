@@ -76,7 +76,7 @@ $result = $db->createTable( 'users', array(
 $result = $db->dropTable( 'users' );
 
 // add index
-$result = $db->addIndex( 'table_name', array( 'column1, 'column2' ), 'index_name', $index_type );
+$result = $db->addIndex( 'table_name', array( 'column1', 'column2' ), 'index_name', $index_type );
 
 // drop index
 $result = $db->dropIndex( 'table_name', 'index_name' );
