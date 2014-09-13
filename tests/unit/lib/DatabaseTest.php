@@ -64,11 +64,12 @@ class DatabaseTest extends \PHPUnit_Framework_TestCase
      */
     public static function setUpBeforeClass( )
     {
+        global $config;
+        
         parent::setUpBeforeClass();
         
-        $config = include_once SUPPORT_DIR . 'config.php';
-        
-        self::$db = new Database( $config[ 'test_db' ] );
+        self::$db = new Database( );
+        self::$db->init( $config[ 'test_db' ] );
     }
     
     /**

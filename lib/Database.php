@@ -58,18 +58,6 @@ class Database extends Component implements IDatabase
     public $mysql;
     
     protected $query;
-
-    /**
-     * Database Constructor.
-     * 
-     * @param array $config configuration array
-     */
-    public function __construct( $config )
-    {
-        parent::__construct( $config );
-        
-        $this->init( $config );
-    }
     
     /**
      * Initialises the database.
@@ -78,6 +66,8 @@ class Database extends Component implements IDatabase
      */
     public function init( $config )
     {
+        parent::init( $config );
+        
         if ( $config !== NULL )
         {
             $this->_host        = $config[ 'db_host' ];

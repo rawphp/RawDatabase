@@ -34,6 +34,8 @@
 defined( 'DS' )             || define( 'DS', DIRECTORY_SEPARATOR );
 defined( 'SUPPORT_DIR' )    || define( 'SUPPORT_DIR', dirname( __FILE__ ) . DS . '_support' . DS );
 
+$config = include_once SUPPORT_DIR . 'config.php';
+        
 require_once dirname( dirname( __FILE__ ) ) . DS . 'vendor' . DS . 'autoload.php';
 
 echo PHP_EOL . PHP_EOL . '************* BOOTSTRAP ********************' . PHP_EOL . PHP_EOL;

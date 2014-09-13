@@ -52,7 +52,8 @@ $config = array(
 );
 
 // create a new instance of database
-$db = new Database( $config );
+$db = new Database( );
+$db->init( $config );
 
 // query the users table - returns an array of key->value pairs
 $results = $db->query( "SELECT * FROM users" );
@@ -91,6 +92,9 @@ This package is licensed under the [MIT](https://github.com/rawphp/RawDatabase/b
 Please submit bug reports, suggestions and pull requests to the [GitHub issue tracker](https://github.com/rawphp/RawDatabase/issues).
 
 ## Changelog
+
+#### 13-09-2014
+- Moved database initialisation into `init()`
 
 #### 11-09-2014
 - Initial Code Commit
