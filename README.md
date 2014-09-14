@@ -93,6 +93,9 @@ Please submit bug reports, suggestions and pull requests to the [GitHub issue tr
 
 ## Changelog
 
+#### 14-09-2014
+- Implemented the hook system.
+
 #### 13-09-2014
 - Moved database initialisation into `init()`
 

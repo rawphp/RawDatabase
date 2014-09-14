@@ -38,6 +38,7 @@ namespace RawPHP\RawDatabase;
 use mysqli;
 use RawPHP\RawBase\Component;
 use RawPHP\RawDatabase\IDatabase;
+use RawPHP\RawDatabase\DatabaseException;
 
 /**
  * The database class provides MySQL database services.
@@ -63,10 +64,15 @@ class Database extends Component implements IDatabase
      * Initialises the database.
      * 
      * @param array $config configuration array
+     * 
+     * @action ON_BEFORE_INIT_ACTION
+     * @action ON_AFTER_INIT_ACTION
      */
     public function init( $config )
     {
         parent::init( $config );
+        
+        $this->doAction( self::ON_BEFORE_INIT_ACTION );
         
         if ( $config !== NULL )
         {
@@ -77,6 +83,8 @@ class Database extends Component implements IDatabase
 
             $this->_connect();
         }
+        
+        $this->doAction( self::ON_AFTER_INIT_ACTION );
     }
     
     /**
@@ -97,24 +105,34 @@ class Database extends Component implements IDatabase
 
         return TRUE;
     }
-
+    
     /**
      * Returns the last mysql error.
+     * 
+     * @action ON_GET_ERROR_ACTION
+     * 
+     * @filter ON_GET_ERROR_FILTER(1)
      * 
      * @return string last error
      */
     public function getError()
     {
-        return $this->mysql->error;
+        $this->doAction( self::ON_GET_ERROR_ACTION );
+        
+        return $this->filter( self::ON_GET_ERROR_FILTER, $this->mysql->error );
     }
-
+    
     /**
      * Call this function when you're expecting a result
      * from queries like SELECT.
      * 
      * @param string $query the query string
      * 
-     * @return array|bool list of results or FALSE
+     * @action ON_QUERY_ACTION
+     * 
+     * @filter ON_QUERY_FILTER(2)
+     * 
+     * @return mixed list of results or FALSE
      */
     public function query( $query )
     {
@@ -136,34 +154,50 @@ class Database extends Component implements IDatabase
         
         $result->free();
         
-        return $data;
+        $this->doAction( self::ON_QUERY_ACTION );
+        
+        return $this->filter( self::ON_QUERY_FILTER, $data, $query );
     }
-
+    
     /**
      * Inserts a record into the database.
      * 
      * @param string $query the query string
      * 
-     * @return int|bool inserted ID on success, FALSE on failure
+     * @action ON_INSERT_ACTION
+     * 
+     * @filter ON_INSERT_FILTER(2)
+     * 
+     * @return mixed inserted ID on success, FALSE on failure
      */
     public function insert( $query )
     {
         $this->query = $query;
         
+        $id = NULL;
+        
         if ( FALSE !== $this->mysql->query( $this->query ) )
         {
-            return $this->mysql->insert_id;
+            $id = $this->mysql->insert_id;
         }
         else
         {
-            return FALSE;
+            $id = FALSE;
         }
+        
+        $this->doAction( self::ON_INSERT_ACTION );
+        
+        return $this->filter( self::ON_INSERT_FILTER, $id, $query );
     }
-
+    
     /**
      * Executes a database query which does not return a value.
      * 
      * @param string $query the query
+     * 
+     * @action ON_EXECUTE_ACTION
+     * 
+     * @filter ON_EXECUTE_FILTER(2)
      * 
      * @return int|bool number of affected rows on success, FALSE on failure
      */
@@ -171,20 +205,30 @@ class Database extends Component implements IDatabase
     {
         $this->query = $query;
         
+        $result = NULL;
+        
         if ( FALSE !== ( $result = $this->mysql->query( $this->query ) ) )
         {
-            return $this->mysql->affected_rows;
+            $result = $this->mysql->affected_rows;
         }
         else
         {
-            return FALSE;
+            $result = FALSE;
         }
+        
+        $this->doAction( self::ON_EXECUTE_ACTION );
+        
+        return $this->filter( self::ON_EXECUTE_FILTER, $result, $query );
     }
     
     /**
      * Executes database modification query.
      * 
      * @param string $query the query
+     * 
+     * @action ON_MODIFY_ACTION
+     * 
+     * @filter ON_MODIFY_FILTER(2)
      * 
      * @return bool TRUE on success, FALSE on failure
      */
@@ -194,7 +238,9 @@ class Database extends Component implements IDatabase
         
         $result = $this->mysql->query( $this->query );
         
-        return $result;
+        $this->doAction( self::ON_MODIFY_ACTION );
+        
+        return $this->filter( self::ON_MODIFY_FILTER, $result, $query );
     }
     
     /**
@@ -203,47 +249,89 @@ class Database extends Component implements IDatabase
      * By default, MYSQL Transactions are set to AUTO_COMMIT the queries if not
      * disabled. You can disable AUTO COMMIT by calling 
      * <code>setTransactionAutoCommit( FALSE )</code> after calling this method.
+     * 
+     * @action ON_START_TRANSACTION_ACTION
+     * 
+     * @filter ON_START_TRANSACTION_FILTER(1)
+     * 
+     * @return bool TRUE on success, FALSE on failure
      */
     public function startTransaction( )
     {
         $this->query = "START TRANSACTION;";
         
-        $this->execute( $this->query );
+        $result =  $this->modify( $this->query );
+        
+        $this->doAction( self::ON_START_TRANSACTION_ACTION );
+        
+        return $this->filter( self::ON_START_TRANSACTION_FILTER, $result );
     }
     
     /**
      * Commits a database transaction.
+     * 
+     * @action ON_COMMIT_TRANSACTION_ACTION
+     * 
+     * @filter ON_COMMIT_TRANSACTION_FILTER(1)
+     * 
+     * @return bool TRUE on success, FALSE on failure
      */
     public function commitTransaction( )
     {
         $this->query = "COMMIT;";
         
-        $this->execute( $this->query );
+        $result = $this->modify( $this->query );
+        
+        $this->doAction( self::ON_COMMIT_TRANSACTION_ACTION );
+        
+        return $this->filter( self::ON_COMMIT_TRANSACTION_FILTER, $result );
     }
     
     /**
      * Reverses a database transaction.
+     * 
+     * @action ON_ROLLBACK_TRANSACTION_ACTION
+     * 
+     * @filter ON_ROLLBACK_TRANSACTION_FILTER(1)
+     * 
+     * @return bool TRUE on success, FALSE on failure
      */
     public function rollbackTransaction( )
     {
         $this->query = "ROLLBACK;";
         
-        $this->execute( $this->query );
+        $result = $this->modify( $this->query );
+        
+        $this->doAction( self::ON_ROLLBACK_TRANSACTION_ACTION );
+        
+        return $this->filter( self::ON_ROLLBACK_TRANSACTION_FILTER, $result );
     }
     
     /**
      * Sets the AUTO COMMIT option.
      * 
      * @param bool $autoCommit whether auto commit should be on
+     * 
+     * @action ON_SET_TRANSACTION_AUTO_COMMIT_ACTION
+     * 
+     * @filter ON_SET_TRANSACTION_AUTO_COMMIT_FILTER(2)
+     * 
+     * @return bool TRUE on success, FALSE on failure
      */
     public function setTransactionAutoCommit( $autoCommit = FALSE )
     {
         $this->query = "SET autocommit = 0;";
         
+        $result = NULL;
+        
         if ( !$autoCommit )
         {
-            $this->execute( $this->query );
+            $result = $this->modify( $this->query );
         }
+        
+        $this->doAction( self::ON_SET_TRANSACTION_AUTO_COMMIT_ACTION );
+        
+        return $this->filter( self::ON_SET_TRANSACTION_AUTO_COMMIT_FILTER, $result, $autoCommit );
     }
     
     /**
@@ -251,10 +339,16 @@ class Database extends Component implements IDatabase
      * 
      * @param string $table table name
      * 
+     * @action ON_TABLE_EXISTS_ACTION
+     * 
+     * @filter ON_TABLE_EXISTS_FILTER(2)
+     * 
      * @return bool TRUE if table exists, else FALSE
      */
     public function tableExists( $table )
     {
+        $result = FALSE;
+        
         try
         {
             $this->query = "SELECT 1 FROM `$table` LIMIT 1";
@@ -265,15 +359,21 @@ class Database extends Component implements IDatabase
 
             if ( FALSE !== strstr( $error, "doesn't exist" ) )
             {
-                return FALSE;
+                $result = FALSE;
             }
-
-            return TRUE;
+            else
+            {
+                $result = TRUE;
+            }
         }
         catch ( Exception $e )
         {
-            return FALSE;
+            $result = FALSE;
         }
+        
+        $this->doAction( self::ON_TABLE_EXISTS_ACTION );
+        
+        return $this->filter( self::ON_TABLE_EXISTS_FILTER, $result, $table );
     }
     
     /**
@@ -281,13 +381,24 @@ class Database extends Component implements IDatabase
      * 
      * @param string $table table name
      * 
+     * @action ON_BEFORE_TRUNCATE_TABLE_ACTION
+     * @action ON_AFTER_TRUNCATE_TABLE_ACTION
+     * 
+     * @filter ON_TRUNCATE_TABLE_FILTER(2)
+     * 
      * @return bool TRUE on success, FALSE on failure
      */
     public function truncateTable( $table )
     {
+        $this->doAction( self::ON_BEFORE_TRUNCATE_TABLE_ACTION );
+        
         $this->query = "TRUNCATE TABLE `$table`;";
         
-        return $this->modify( $this->query );
+        $result = $this->modify( $this->query );
+        
+        $this->doAction( self::ON_AFTER_TRUNCATE_TABLE_ACTION );
+        
+        return $this->filter( self::ON_TRUNCATE_TABLE_FILTER, $result, $table );
     }
     
     /**
@@ -299,12 +410,19 @@ class Database extends Component implements IDatabase
      * @param string $engine    database engine - defaults to 'InnoDB'
      * @param string $collation default collation - defaults to 'utf8_unicode_ci'
      * 
+     * @action ON_BEFORE_CREATE_TABLE_ACTION
+     * @action ON_AFTER_CREATE_TABLE_ACTION
+     * 
+     * @filter ON_CREATE_TABLE_FILTER(6)
+     * 
      * @return bool TRUE on success, FALSE on failure
      */
     public function createTable( $name, $columns = array(), $charSet = 'utf8', 
         $engine = 'InnoDB', $collation = 'utf8_unicode_ci'
     )
     {
+        $this->doAction( self::ON_BEFORE_CREATE_TABLE_ACTION );
+        
         $query = "CREATE TABLE IF NOT EXISTS `$name` ( ";
         
         foreach( $columns as $name => $type )
@@ -321,12 +439,11 @@ class Database extends Component implements IDatabase
         
         $result = $this->modify( $query );
         
-        if ( FALSE === $result )
-        {
-            throw new \Exception( 'Failed to create table: ' . $name );
-        }
+        $this->doAction( self::ON_AFTER_CREATE_TABLE_ACTION );
         
-        return TRUE;
+        return $this->filter( self::ON_CREATE_TABLE_FILTER, 
+                $result, $name, $columns, $charSet, $engine, $collation
+        );
     }
     
     /**
@@ -334,13 +451,24 @@ class Database extends Component implements IDatabase
      * 
      * @param string $table table name
      * 
+     * @action ON_BEFORE_DROP_TABLE_ACTION
+     * @action ON_AFTER_DROP_TABLE_ACTION
+     * 
+     * @filter ON_DROP_TABLE_FILTER(2)
+     * 
      * @return bool TRUE on success, FALSE on failure
      */
     public function dropTable( $table )
     {
+        $this->doAction( self::ON_BEFORE_DROP_TABLE_ACTION );
+        
         $this->query = "DROP TABLE IF EXISTS `$table`;";
         
-        return $this->modify( $this->query );
+        $this->doAction( self::ON_AFTER_DROP_TABLE_ACTION );
+        
+        $result = $this->modify( $this->query );
+        
+        return $this->filter( self::ON_DROP_TABLE_FILTER, $result, $table );
     }
     
     /**
@@ -350,6 +478,10 @@ class Database extends Component implements IDatabase
      * @param string $name  new column name
      * @param string $type  column type definition
      * 
+     * @action ON_ADD_COLUMN_ACTION
+     * 
+     * @filter ON_ADD_COLUMN_FILTER(4)
+     * 
      * @return bool TRUE on success, FALSE on failure
      */
     public function addColumn( $table, $name, $type )
@@ -357,7 +489,11 @@ class Database extends Component implements IDatabase
         $query = "ALTER TABLE `$table` ADD ";
         $query .= "`$name` $type;";
         
-        return $this->modify( $query );
+        $result = $this->modify( $query );
+        
+        $this->doAction( self::ON_ADD_COLUMN_ACTION );
+        
+        return $this->filter( self::ON_ADD_COLUMN_FILTER, $result, $table, $name, $type );
     }
     
     /**
@@ -366,13 +502,21 @@ class Database extends Component implements IDatabase
      * @param string $table table name
      * @param string $name  column name to drop
      * 
+     * @action ON_DROP_COLUMN_ACTION
+     * 
+     * @filter ON_DROP_COLUMN_FILTER(3)
+     * 
      * @return bool TRUE on success, FALSE on failure
      */
     public function dropColumn( $table, $name )
     {
         $query = "ALTER TABLE `$table` DROP COLUMN `$name`;";
         
-        return $this->modify( $query );
+        $result = $this->modify( $query );
+        
+        $this->doAction( self::ON_DROP_COLUMN_ACTION );
+        
+        return $this->filter( self::ON_DROP_COLUMN_FILTER, $result, $table, $name );
     }
     
     /**
@@ -391,6 +535,10 @@ class Database extends Component implements IDatabase
      *     'on_delete'   => SET NULL',
      *     'on_update'   => SET NULL',
      * );
+     * 
+     * @action ON_ADD_FOREIGN_KEY_ACTION
+     * 
+     * @filter ON_ADD_FOREIGN_KEY_FILTER(3)
      * 
      * @return bool TRUE on success, FALSE on failure
      */
@@ -422,7 +570,11 @@ class Database extends Component implements IDatabase
         $query = trim( $query );
         $query .= ';';
         
-        return $this->modify( $query );
+        $result = $this->modify( $query );
+        
+        $this->doAction( self::ON_ADD_FOREIGN_KEY_ACTION );
+        
+        return $this->filter( self::ON_ADD_FOREIGN_KEY_FILTER, $result, $table, $key );
     }
     
     /**
@@ -431,19 +583,34 @@ class Database extends Component implements IDatabase
      * @param string $table   table name
      * @param string $keyName key name
      * 
+     * @action ON_BEFORE_DROP_FOREIGN_KEY_ACTION
+     * @action ON_AFTER_DROP_FOREIGN_KEY_ACTION
+     * 
+     * @filter ON_DROP_FOREIGN_KEY_FILTER(3)
+     * 
      * @return bool TRUE on success, FALSE on failure
      */
     public function dropForeignKey( $table, $keyName )
     {
+        $this->doAction( self::ON_BEFORE_DROP_FOREIGN_KEY_ACTION );
+        
         $query = "ALTER TABLE `$table` DROP FOREIGN KEY $keyName";
         
-        return $this->modify( $query );
+        $result = $this->modify( $query );
+        
+        $this->doAction( self::ON_AFTER_DROP_FOREIGN_KEY_ACTION );
+        
+        return $this->filter( self::ON_DROP_FOREIGN_KEY_FILTER, $result, $table, $keyName );
     }
     
     /**
      * Returns a list of foreign keys for a table.
      * 
      * @param string $table table name
+     * 
+     * @action ON_GET_TABLE_FOREIGN_KEYS_ACTION
+     * 
+     * @filter ON_GET_TABLE_FOREIGNKEYS_FILTER(2)
      * 
      * @return array list of foreign keys
      */
@@ -476,7 +643,9 @@ class Database extends Component implements IDatabase
             }
         }
         
-        return $keys;
+        $this->doAction( self::ON_GET_TABLE_FOREIGN_KEYS_ACTION );
+        
+        return $this->filter( self::ON_GET_TABLE_FOREIGNKEYS_FILTER, $keys, $table );
     }
     
     /**
@@ -484,6 +653,10 @@ class Database extends Component implements IDatabase
      * 
      * @param string $table   table name
      * @param array  $columns the table column names
+     * 
+     * @action ON_INDEX_ACTIONS_ACTION
+     * 
+     * @filter ON_INDEX_ACTIONS_FILTER(3)
      * 
      * @return bool TRUE if index exists, else FALSE
      */
@@ -506,7 +679,11 @@ class Database extends Component implements IDatabase
         
         $result = $this->query( $query );
         
-        return !empty( $result );
+        $this->doAction( self::ON_INDEX_ACTIONS_ACTION );
+        
+        $result = !empty( $result );
+        
+        return $this->filter( self::ON_INDEX_ACTIONS_FILTER, $result, $table, $columns );
     }
     
     /**
@@ -516,6 +693,10 @@ class Database extends Component implements IDatabase
      * @param array  $columns list of columns
      * @param string $name    optional index name
      * @param string $type    type of index to create ( defaults to normal )
+     * 
+     * @action ON_ADD_INDEX_ACTION
+     * 
+     * @filter ON_ADD_INDEX_FILTER(5)
      * 
      * @return bool TRUE on success, FALSE on failure
      * 
@@ -539,13 +720,23 @@ class Database extends Component implements IDatabase
         
         $query .= " )";
         
-        return $this->modify( $query );
+        $result = $this->modify( $query );
+        
+        $this->doAction( self::ON_ADD_INDEX_ACTION );
+        
+        return $this->filter( self::ON_ADD_INDEX_FILTER, 
+                $result, $table, $columns, $name, $type
+        );
     }
     
     /**
      * Returns a list of indexes for a table.
      * 
      * @param string $table table name
+     * 
+     * @action ON_GET_TABLE_INDEXES_ACTION
+     * 
+     * @filter ON_GET_TABLE_INDEXES_FILTER(2)
      * 
      * @return array list of indexes
      */
@@ -589,7 +780,9 @@ class Database extends Component implements IDatabase
             }
         }
         
-        return $indexes;
+        $this->doAction( self::ON_GET_TABLE_INDEXES_ACTION );
+        
+        return $this->filter( self::ON_GET_TABLE_INDEXES_FILTER, $indexes, $table );
     }
     
     /**
@@ -598,13 +791,24 @@ class Database extends Component implements IDatabase
      * @param string $table table name
      * @param string $name  index name
      * 
+     * @action ON_BEFORE_DROP_INDEX_ACTION
+     * @action ON_AFTER_DROP_INDEX_ACTION
+     * 
+     * @filter ON_DROP_INDEX_FILTER(3)
+     * 
      * @return bool TRUE on success, FALSE on failure
      */
     public function dropIndex( $table, $name )
     {
+        $this->doAction( self::ON_BEFORE_DROP_INDEX_ACTION );
+        
         $query = "ALTER TABLE `$table` DROP INDEX $name";
         
-        return $this->modify( $query );
+        $result = $this->modify( $query );
+        
+        $this->doAction( self::ON_AFTER_DROP_INDEX_ACTION );
+        
+        return $this->filter( self::ON_DROP_INDEX_FILTER, $result, $table, $name );
     }
     
     /**
@@ -617,10 +821,17 @@ class Database extends Component implements IDatabase
      * 
      * @see http://dev.mysql.com/doc/refman/5.1/en/lock-tables.html
      * 
+     * @action ON_BEFORE_LOCK_TABLES_ACTION
+     * @action ON_AFTER_LOCK_TABLES_ACTION
+     * 
+     * @filter ON_LOCK_TABLES_FILTER(2)
+     * 
      * @return bool TRUE on success, FALSE on failure
      */
     public function lockTables( $tables )
     {
+        $this->doAction( self::ON_BEFORE_LOCK_TABLES_ACTION );
+        
         if ( is_array( $tables ) )
         {
             $tmp = '';
@@ -637,7 +848,11 @@ class Database extends Component implements IDatabase
         
         $query = "LOCK TABLES $tables WRITE;";
         
-        return $this->modify( $query );
+        $result =  $this->modify( $query );
+        
+        $this->doAction( self::ON_AFTER_LOCK_TABLES_ACTION );
+        
+        return $this->filter( self::ON_LOCK_TABLES_FILTER, $result, $tables );
     }
     
     /**
@@ -645,13 +860,24 @@ class Database extends Component implements IDatabase
      * 
      * @see http://dev.mysql.com/doc/refman/5.1/en/lock-tables.html
      * 
+     * @action ON_BEFORE_UNLOCK_TABLES_ACTION
+     * @action ON_AFTER_UNLOCK_TABLES_ACTION
+     * 
+     * @filter ON_UNLOCK_TABLES_FILTER(1)
+     * 
      * @return bool TRUE on success, FALSE on failure
      */
     public function unlockTables( )
     {
+        $this->doAction( self::ON_BEFORE_UNLOCK_TABLES_ACTION );
+        
         $query = "UNLOCK TABLES;";
         
-        return $this->modify( $query );
+        $result = $this->modify( $query );
+        
+        $this->doAction( self::ON_AFTER_UNLOCK_TABLES_ACTION );
+        
+        return $this->filter( self::ON_UNLOCK_TABLES_FILTER, $result );
     }
     
     /**
@@ -659,16 +885,99 @@ class Database extends Component implements IDatabase
      * 
      * @param string $string the string to prepare
      * 
+     * @filter ON_PREPARE_STRING_FILTER(2)
+     * 
      * @return string to prepared string
      */
     public function prepareString( $string )
     {
-        return $this->mysql->real_escape_string( $string );
+        $result = $this->mysql->real_escape_string( $string );
+        
+        return $this->filter( self::ON_PREPARE_STRING_FILTER, $result, $string );
     }
+    
     
     const INDEX_INDEX       = 'INDEX';
     const INDEX_UNIQUE      = 'UNIQUE';
     const INDEX_PRIMARY_KEY = 'PRIMARY KEY';
     const INDEX_FULL_TEXT   = 'FULLTEXT';
     const INDEX_SPATIAL     = 'SPATIAL';
+    
+    // actions
+    const ON_BEFORE_INIT_ACTION             = 'on_before_init_action';
+    const ON_AFTER_INIT_ACTION              = 'on_after_init_action';
+    
+    const ON_GET_ERROR_ACTION               = 'on_get_error_action';
+    
+    const ON_QUERY_ACTION                   = 'on_query_action';
+    const ON_INSERT_ACTION                  = 'on_insert_action';
+    const ON_EXECUTE_ACTION                 = 'on_execute_action';
+    const ON_MODIFY_ACTION                  = 'on_modify_action';
+    
+    const ON_START_TRANSACTION_ACTION       = 'on_start_transaction_action';
+    const ON_COMMIT_TRANSACTION_ACTION      = 'on_commit_transaction_action';
+    const ON_ROLLBACK_TRANSACTION_ACTION    = 'on_rollback_transaction_action';
+    const ON_SET_TRANSACTION_AUTO_COMMIT_ACTION = 'on_set_transaction_auto_commit_action';
+    
+    const ON_TABLE_EXISTS_ACTION            = 'on_table_exists_action';
+    const ON_BEFORE_TRUNCATE_TABLE_ACTION   = 'on_before_truncate_table';
+    const ON_AFTER_TRUNCATE_TABLE_ACTION    = 'on_after_truncate_table';
+    const ON_BEFORE_CREATE_TABLE_ACTION     = 'on_before_create_table_action';
+    const ON_AFTER_CREATE_TABLE_ACTION      = 'on_after_create_table_action';
+    const ON_BEFORE_DROP_TABLE_ACTION       = 'on_before_drop_table_action';
+    const ON_AFTER_DROP_TABLE_ACTION        = 'on_after_drop_table_action';
+    
+    const ON_ADD_COLUMN_ACTION              = 'on_add_column_action';
+    const ON_DROP_COLUMN_ACTION             = 'on_drop_column_action';
+    
+    const ON_ADD_FOREIGN_KEY_ACTION         = 'on_add_foreign_key_action';
+    const ON_BEFORE_DROP_FOREIGN_KEY_ACTION = 'on_before_drop_foreign_key_action';
+    const ON_AFTER_DROP_FOREIGN_KEY_ACTION  = 'on_after_drop_foreign_key_action';
+    const ON_GET_TABLE_FOREIGN_KEYS_ACTION  = 'on_get_table_foreign_keys_action';
+    
+    const ON_INDEX_ACTIONS_ACTION           = 'on_index_exists_action';
+    const ON_ADD_INDEX_ACTION               = 'on_add_index_action';
+    const ON_GET_TABLE_INDEXES_ACTION       = 'on_get_table_indexes_action';
+    const ON_BEFORE_DROP_INDEX_ACTION       = 'on_before_drop_index_action';
+    const ON_AFTER_DROP_INDEX_ACTION        = 'on_after_drop_index_action';
+    
+    const ON_BEFORE_LOCK_TABLES_ACTION      = 'on_before_lock_tables_action';
+    const ON_AFTER_LOCK_TABLES_ACTION       = 'on_after_lock_tables_action';
+    const ON_BEFORE_UNLOCK_TABLES_ACTION    = 'on_before_unlock_tables_action';
+    const ON_AFTER_UNLOCK_TABLES_ACTION     = 'on_after_unlock_tables_action';
+    
+    
+    // filters
+    const ON_GET_ERROR_FILTER               = 'on_get_error_filter';
+    const ON_QUERY_FILTER                   = 'on_query_filter';
+    const ON_INSERT_FILTER                  = 'on_insert_filter';
+    const ON_EXECUTE_FILTER                 = 'on_execute_filter';
+    const ON_MODIFY_FILTER                  = 'on_modify_filter';
+    
+    const ON_START_TRANSACTION_FILTER       = 'on_start_transaction_filter';
+    const ON_COMMIT_TRANSACTION_FILTER      = 'on_commit_transaction_filter';
+    const ON_ROLLBACK_TRANSACTION_FILTER    = 'on_rollback_transaction_filter';
+    const ON_SET_TRANSACTION_AUTO_COMMIT_FILTER = 'on_set_transaction_auto_commit_filter';
+    
+    const ON_TABLE_EXISTS_FILTER            = 'on_table_exists_filter';
+    const ON_TRUNCATE_TABLE_FILTER          = 'on_truncate_table_filter';
+    const ON_CREATE_TABLE_FILTER            = 'on_create_table_filter';
+    const ON_DROP_TABLE_FILTER              = 'on_drop_table_filter';
+    
+    const ON_ADD_COLUMN_FILTER              = 'on_add_column_filter';
+    const ON_DROP_COLUMN_FILTER             = 'on_drop_column_filter';
+    
+    const ON_ADD_FOREIGN_KEY_FILTER         = 'on_add_foreign_key_filter';
+    const ON_DROP_FOREIGN_KEY_FILTER        = 'on_drop_foreign_key_filter';
+    const ON_GET_TABLE_FOREIGNKEYS_FILTER   = 'on_get_table_foreign_keys_filter';
+    
+    const ON_INDEX_ACTIONS_FILTER           = 'on_index_exists_filter';
+    const ON_ADD_INDEX_FILTER               = 'on_add_index_filter';
+    const ON_GET_TABLE_INDEXES_FILTER       = 'on_get_table_indexes_filter';
+    const ON_DROP_INDEX_FILTER              = 'on_drop_index_filter';
+    
+    const ON_LOCK_TABLES_FILTER             = 'on_lock_tables_filter';
+    const ON_UNLOCK_TABLES_FILTER           = 'on_unlock_tables_filter';
+    
+    const ON_PREPARE_STRING_FILTER          = 'on_prepare_string_filter';
 }
