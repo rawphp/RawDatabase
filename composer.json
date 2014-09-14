@@ -13,7 +13,7 @@
     ],
     "require": {
         "php": ">=5.4.0",
-        "rawphp/raw-base": "dev-master"
+        "rawphp/raw-base": "0.1.0"
     },
     "require-dev": {
         "phpunit/phpunit": "4.2.5",
