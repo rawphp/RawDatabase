@@ -1,7 +1,7 @@
 {
     "name": "rawphp/raw-database",
     "type": "library",
-    "description": "RawDatabase is a wrapper with useful utility functions around the MySQLi class and is used by RawPHP and other applications.",
+    "description": "RawDatabase is a wrapper with useful utility functions around the MySQLi class and is used by RawPHP framework and other applications.",
     "keywords": [ "database", "mysql", "mysqli" ],
     "homepage": "http://rawphp.org",
     "license": "MIT",
