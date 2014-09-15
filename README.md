@@ -1,5 +1,7 @@
 # RawDatabase - A Simple MySQLi Database Wrapper for PHP Applications
 
+[![Build Status](https://travis-ci.org/rawphp/RawDatabase.svg?branch=master)](https://travis-ci.org/rawphp/RawDatabase)
+
 ## Package Features
 - Query your database with `query( )`
 - Insert records with `insert( )`
