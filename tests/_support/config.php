@@ -42,8 +42,8 @@ $config = array();
  * 
  ******************************************************************************/
 $config[ 'test_db' ][ 'db_name' ] = 'raw_database_test';
-$config[ 'test_db' ][ 'db_user' ] = 'raw';
-$config[ 'test_db' ][ 'db_pass' ] = '20kSN3MAmgYrJY7L';
+$config[ 'test_db' ][ 'db_user' ] = 'root';
+$config[ 'test_db' ][ 'db_pass' ] = '';
 $config[ 'test_db' ][ 'db_host' ] = 'localhost';
 
 
