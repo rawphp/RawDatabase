@@ -95,6 +95,9 @@ Please submit bug reports, suggestions and pull requests to the [GitHub issue tr
 
 ## Changelog
 
+#### 16-09-2014
+- Replaced query in `tableExists()` with cleaner solution.
+
 #### 14-09-2014
 - Implemented the hook system.
 

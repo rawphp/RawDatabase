@@ -347,29 +347,14 @@ class Database extends Component implements IDatabase
      */
     public function tableExists( $table )
     {
-        $result = FALSE;
+        $dbName = $this->_database;
         
-        try
-        {
-            $this->query = "SELECT 1 FROM `$table` LIMIT 1";
-
-            $this->execute( $this->query );
-
-            $error = $this->getError();
-
-            if ( FALSE !== strstr( $error, "doesn't exist" ) )
-            {
-                $result = FALSE;
-            }
-            else
-            {
-                $result = TRUE;
-            }
-        }
-        catch ( Exception $e )
-        {
-            $result = FALSE;
-        }
+        $query = "SELECT COUNT(*) AS count FROM information_schema.tables 
+                  WHERE table_schema = '$dbName' AND table_name = '$table'";
+        
+        $results = $this->query( $query );
+        
+        $result = ( 0 < $results[ 0 ][ 'count' ] );
         
         $this->doAction( self::ON_TABLE_EXISTS_ACTION );
         
