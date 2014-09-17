@@ -68,7 +68,7 @@ class Database extends Component implements IDatabase
      * @action ON_BEFORE_INIT_ACTION
      * @action ON_AFTER_INIT_ACTION
      */
-    public function init( $config )
+    public function init( $config = NULL )
     {
         parent::init( $config );
         

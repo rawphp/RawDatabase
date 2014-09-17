@@ -1,6 +1,6 @@
-# RawDatabase - A Simple MySQLi Database Wrapper for PHP Applications
+# RawDatabase - A Simple MySQLi Database Wrapper for PHP Applications [![Build Status](https://travis-ci.org/rawphp/RawDatabase.svg?branch=master)](https://travis-ci.org/rawphp/RawDatabase)
 
-[![Build Status](https://travis-ci.org/rawphp/RawDatabase.svg?branch=master)](https://travis-ci.org/rawphp/RawDatabase)
+[![Latest Stable Version](https://poser.pugx.org/rawphp/raw-database/v/stable.svg)](https://packagist.org/packages/rawphp/raw-database) [![Total Downloads](https://poser.pugx.org/rawphp/raw-database/downloads.svg)](https://packagist.org/packages/rawphp/raw-database) [![Latest Unstable Version](https://poser.pugx.org/rawphp/raw-database/v/unstable.svg)](https://packagist.org/packages/rawphp/raw-database) [![License](https://poser.pugx.org/rawphp/raw-database/license.svg)](https://packagist.org/packages/rawphp/raw-database)
 
 ## Package Features
 - Query your database with `query( )`
