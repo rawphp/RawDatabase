@@ -38,7 +38,6 @@ namespace RawPHP\RawDatabase;
 use mysqli;
 use RawPHP\RawBase\Component;
 use RawPHP\RawDatabase\IDatabase;
-use RawPHP\RawDatabase\DatabaseException;
 
 /**
  * The database class provides MySQL database services.
