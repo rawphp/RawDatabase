@@ -69,7 +69,7 @@ class DatabaseTest extends \PHPUnit_Framework_TestCase
         parent::setUpBeforeClass();
         
         self::$db = new Database( );
-        self::$db->init( $config[ 'test_db' ] );
+        self::$db->init( $config );
     }
     
     /**
