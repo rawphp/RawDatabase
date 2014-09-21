@@ -99,6 +99,8 @@ Please submit bug reports, suggestions and pull requests to the [GitHub issue tr
 
 #### 22-09-2014
 - Updated for PHP 5.3.
+- Renamed Database to Mysql
+- Added base abstract Database class
 
 #### 20-09-2014
 - Replaced php array configuration with yaml

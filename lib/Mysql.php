@@ -36,8 +36,6 @@
 namespace RawPHP\RawDatabase;
 
 use mysqli;
-use RawPHP\RawBase\Component;
-use RawPHP\RawDatabase\IDatabase;
 
 /**
  * The database class provides MySQL database services.
@@ -49,7 +47,7 @@ use RawPHP\RawDatabase\IDatabase;
  * @license   http://rawphp.org/license.txt MIT
  * @link      http://rawphp.org/
  */
-class Mysql extends Component implements IDatabase
+class Mysql extends Database
 {
     private $_database;
     private $_host;
@@ -880,12 +878,6 @@ class Mysql extends Component implements IDatabase
         return $this->filter( self::ON_PREPARE_STRING_FILTER, $result, $string );
     }
     
-    
-    const INDEX_INDEX       = 'INDEX';
-    const INDEX_UNIQUE      = 'UNIQUE';
-    const INDEX_PRIMARY_KEY = 'PRIMARY KEY';
-    const INDEX_FULL_TEXT   = 'FULLTEXT';
-    const INDEX_SPATIAL     = 'SPATIAL';
     
     // actions
     const ON_BEFORE_INIT_ACTION             = 'on_before_init_action';
