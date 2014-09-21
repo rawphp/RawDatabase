@@ -1,18 +1,25 @@
 language: php
 
 php:
+    - 5.3
     - 5.4
     - 5.5
     - 5.6
+    - hhvm
 
 env:
     - DB=mysql
 
 before_script:
-    - composer install
+    - composer install --dev --prefer-source
     - if [[ "$DB" == "mysql" ]]; then mysql -e "CREATE DATABASE IF NOT EXISTS raw_database_test;" -uroot; fi
 
-script: phpunit --configuration tests/phpunit.xml --coverage-text
+script:
+    - mkdir -p build/logs
+    - phpunit --configuration ./tests/phpunit.xml --coverage-clover build/logs/clover.xml
+
+after_script:
+    - php vendor/bin/coveralls -v
 
 notifications:
     email:

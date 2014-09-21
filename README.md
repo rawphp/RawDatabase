@@ -1,6 +1,8 @@
-# RawDatabase - A Simple MySQLi Database Wrapper for PHP Applications [![Build Status](https://travis-ci.org/rawphp/RawDatabase.svg?branch=master)](https://travis-ci.org/rawphp/RawDatabase)
+# RawDatabase - A Simple MySQLi Database Wrapper for PHP Applications
 
-[![Latest Stable Version](https://poser.pugx.org/rawphp/raw-database/v/stable.svg)](https://packagist.org/packages/rawphp/raw-database) [![Total Downloads](https://poser.pugx.org/rawphp/raw-database/downloads.svg)](https://packagist.org/packages/rawphp/raw-database) [![Latest Unstable Version](https://poser.pugx.org/rawphp/raw-database/v/unstable.svg)](https://packagist.org/packages/rawphp/raw-database) [![License](https://poser.pugx.org/rawphp/raw-database/license.svg)](https://packagist.org/packages/rawphp/raw-database)
+[![Build Status](https://travis-ci.org/rawphp/RawDatabase.svg?branch=master)](https://travis-ci.org/rawphp/RawDatabase) [![Coverage Status](https://coveralls.io/repos/rawphp/RawDatabase/badge.png)](https://coveralls.io/r/rawphp/RawDatabase)
+[![Latest Stable Version](https://poser.pugx.org/rawphp/raw-database/v/stable.svg)](https://packagist.org/packages/rawphp/raw-database) [![Total Downloads](https://poser.pugx.org/rawphp/raw-database/downloads.svg)](https://packagist.org/packages/rawphp/raw-database) 
+[![Latest Unstable Version](https://poser.pugx.org/rawphp/raw-database/v/unstable.svg)](https://packagist.org/packages/rawphp/raw-database) [![License](https://poser.pugx.org/rawphp/raw-database/license.svg)](https://packagist.org/packages/rawphp/raw-database)
 
 ## Package Features
 - Query your database with `query( )`
@@ -94,6 +96,9 @@ This package is licensed under the [MIT](https://github.com/rawphp/RawDatabase/b
 Please submit bug reports, suggestions and pull requests to the [GitHub issue tracker](https://github.com/rawphp/RawDatabase/issues).
 
 ## Changelog
+
+#### 22-09-2014
+- Updated for PHP 5.3.
 
 #### 20-09-2014
 - Replaced php array configuration with yaml
