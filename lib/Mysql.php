@@ -49,7 +49,7 @@ use RawPHP\RawDatabase\IDatabase;
  * @license   http://rawphp.org/license.txt MIT
  * @link      http://rawphp.org/
  */
-class Database extends Component implements IDatabase
+class Mysql extends Component implements IDatabase
 {
     private $_database;
     private $_host;

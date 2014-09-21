@@ -45,10 +45,10 @@ namespace RawPHP\RawDatabase;
  * @license   http://rawphp.org/license.txt MIT
  * @link      http://rawphp.org/
  */
-class DatabaseTest extends \PHPUnit_Framework_TestCase
+class MysqlTest extends \PHPUnit_Framework_TestCase
 {
     /**
-     * @var Database
+     * @var Mysql
      */
     public static $db;
     
@@ -68,7 +68,7 @@ class DatabaseTest extends \PHPUnit_Framework_TestCase
         
         parent::setUpBeforeClass();
         
-        self::$db = new Database( );
+        self::$db = new Mysql( );
         self::$db->init( $config );
     }
     
