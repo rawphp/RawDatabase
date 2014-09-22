@@ -36,7 +36,7 @@
 namespace RawPHP\RawDatabase;
 
 /**
- * Database tests.
+ * Mysql Database tests.
  * 
  * @category  PHP
  * @package   RawPHP/RawDatabase/Tests
@@ -45,10 +45,10 @@ namespace RawPHP\RawDatabase;
  * @license   http://rawphp.org/license.txt MIT
  * @link      http://rawphp.org/
  */
-class MysqlTest extends \PHPUnit_Framework_TestCase
+class MySqlTest extends \PHPUnit_Framework_TestCase
 {
     /**
-     * @var Mysql
+     * @var MySql
      */
     public static $db;
     
@@ -68,7 +68,7 @@ class MysqlTest extends \PHPUnit_Framework_TestCase
         
         parent::setUpBeforeClass();
         
-        self::$db = new Mysql( );
+        self::$db = new MySql( );
         self::$db->init( $config );
     }
     
@@ -99,6 +99,23 @@ class MysqlTest extends \PHPUnit_Framework_TestCase
     public function testDatabaseInstanceIsCorrectlyInitialised( )
     {
         $this->assertNotNull( self::$db );
+    }
+    
+    /**
+     * Test failed connection throws exception.
+     * 
+     * @expectedException RawPHP\RawDatabase\DatabaseException
+     */
+    public function testFailedConnectionThrowsException( )
+    {
+        $db = new Mysql();
+        $db->init( array( 
+            'db_host' => 'localhost',
+            'db_name' => 'fake_name_db',
+            'db_user' => 'no_user',
+            'db_pass' => '',
+            )
+        );
     }
     
     /**

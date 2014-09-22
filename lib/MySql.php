@@ -47,7 +47,7 @@ use mysqli;
  * @license   http://rawphp.org/license.txt MIT
  * @link      http://rawphp.org/
  */
-class Mysql extends Database
+class MySql extends Database
 {
     private $_database;
     private $_host;
@@ -91,13 +91,18 @@ class Mysql extends Database
      */
     private function _connect()
     {
-        $this->mysql = new mysqli( $this->_host, $this->_user, $this->_password, $this->_database );
+        try
+        {
+            $this->mysql = new mysqli( $this->_host, $this->_user, $this->_password, $this->_database );
+            
+        } catch ( \Exception $e )
+        {
+            throw new DatabaseException( $e->getMessage( ), $e->getCode( ), $e );
+        }
         
         if ( $this->mysql->connect_error )
         {
-            echo "Failed to connect to database.";
-            
-            return FALSE;
+            throw new DatabaseException( 'Failed to connect to database.' );
         }
 
         return TRUE;
