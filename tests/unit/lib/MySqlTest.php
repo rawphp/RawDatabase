@@ -36,7 +36,7 @@
 namespace RawPHP\RawDatabase;
 
 /**
- * Mysql Database tests.
+ * MySql Database tests.
  * 
  * @category  PHP
  * @package   RawPHP/RawDatabase/Tests
@@ -108,7 +108,7 @@ class MySqlTest extends \PHPUnit_Framework_TestCase
      */
     public function testFailedConnectionThrowsException( )
     {
-        $db = new Mysql();
+        $db = new MySql( );
         $db->init( array( 
             'db_host' => 'localhost',
             'db_name' => 'fake_name_db',
