@@ -39,7 +39,7 @@ use RawPHP\RawBase\Component;
 use RawPHP\RawDatabase\IDatabase;
 
 /**
- * The database class provides MySQL database services.
+ * Base database class to be extended by service providers.
  * 
  * @category  PHP
  * @package   RawPHP/RawDatabase
