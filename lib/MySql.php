@@ -49,16 +49,36 @@ use mysqli;
  */
 class MySql extends Database
 {
+    /**
+     * @var string
+     */
     private $_database;
+    /**
+     * @var string
+     */
     private $_host;
+    /**
+     * @var string
+     */
     private $_user;
+    /**
+     * @var string
+     */
     private $_password;
+    
+    /**
+     * @var mysqli
+     */
     public $mysql;
     
+    /**
+     * @var string
+     */
     protected $query;
     
     /**
-     * Initialises the database.
+     * Initialises the database and creates a new
+     * connection.
      * 
      * @param array $config configuration array
      * 
@@ -78,34 +98,22 @@ class MySql extends Database
             $this->_password    = $config[ 'db_pass' ];
             $this->_database    = $config[ 'db_name' ];
 
-            $this->_connect();
+            try
+            {
+                $this->mysql = new mysqli( $this->_host, $this->_user, $this->_password, $this->_database );
+
+            } catch ( \Exception $e )
+            {
+                throw new DatabaseException( $e->getMessage( ), $e->getCode( ), $e );
+            }
+
+            if ( 0 !== $this->mysql->connect_errno )
+            {
+                throw new DatabaseException( 'Failed to connect to database - ' . $this->mysql->connect_error );
+            }
         }
         
         $this->doAction( self::ON_AFTER_INIT_ACTION );
-    }
-    
-    /**
-     * Connects to the database.
-     * 
-     * @return bool TRUE on success, FALSE on failure
-     */
-    private function _connect()
-    {
-        try
-        {
-            $this->mysql = new mysqli( $this->_host, $this->_user, $this->_password, $this->_database );
-            
-        } catch ( \Exception $e )
-        {
-            throw new DatabaseException( $e->getMessage( ), $e->getCode( ), $e );
-        }
-        
-        if ( $this->mysql->connect_error )
-        {
-            throw new DatabaseException( 'Failed to connect to database.' );
-        }
-
-        return TRUE;
     }
     
     /**
@@ -117,7 +125,7 @@ class MySql extends Database
      * 
      * @return string last error
      */
-    public function getError()
+    public function getError( )
     {
         $this->doAction( self::ON_GET_ERROR_ACTION );
         
