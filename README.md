@@ -58,8 +58,7 @@ $config = array(
 );
 
 // create a new instance of database
-$db = new Database( );
-$db->init( $config );
+$db = new Database( $config );
 
 // query the users table - returns an array of key->value pairs
 $results = $db->query( "SELECT * FROM users" );
