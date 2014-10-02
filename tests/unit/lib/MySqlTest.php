@@ -599,8 +599,10 @@ class MySqlTest extends \PHPUnit_Framework_TestCase
         $this->assertNotNull( $keys );
         $this->assertEquals( 2, count( $keys ) );
 
-        $this->assertEquals( 'key_table_key1', $keys[ 0 ][ 'key_name' ] );
-        $this->assertEquals( 'key_table_key2', $keys[ 1 ][ 'key_name' ] );
+        $this->assertEquals( 'key_table_key',
+            substr( $keys[ 0 ][ 'key_name' ], 0, strlen( $keys[ 0 ][ 'key_name' ] ) - 1 ) );
+        $this->assertEquals( 'key_table_key',
+            substr( $keys[ 1 ][ 'key_name' ], 0, strlen( $keys[ 1 ][ 'key_name' ] ) - 1 ) );
     }
 
     /**
