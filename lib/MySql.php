@@ -152,17 +152,22 @@ class MySql extends Database
 
         if ( FALSE === $result || 0 === $result->num_rows )
         {
-            return array();
+            return array( );
         }
 
-        $data = array();
+        if ( !empty( $this->getError( ) ) )
+        {
+            throw new DatabaseException( $this->getError(), $this->mysql->errno );
+        }
+
+        $data = [ ];
 
         while ( $row = $result->fetch_assoc() )
         {
-            $data[] = $row;
+            $data[ ] = $row;
         }
 
-        $result->free();
+        $result->free( );
 
         $this->doAction( self::ON_QUERY_ACTION );
 
@@ -193,6 +198,11 @@ class MySql extends Database
         else
         {
             $id = FALSE;
+        }
+
+        if ( !empty( $this->getError( ) ) )
+        {
+            throw new DatabaseException( $this->getError(), $this->mysql->errno );
         }
 
         $this->doAction( self::ON_INSERT_ACTION );
@@ -226,6 +236,11 @@ class MySql extends Database
             $result = FALSE;
         }
 
+        if ( !empty( $this->getError( ) ) )
+        {
+            throw new DatabaseException( $this->getError(), $this->mysql->errno );
+        }
+
         $this->doAction( self::ON_EXECUTE_ACTION );
 
         return $this->filter( self::ON_EXECUTE_FILTER, $result, $query );
@@ -248,9 +263,72 @@ class MySql extends Database
 
         $result = $this->mysql->query( $this->query );
 
+        if ( !empty( $this->getError( ) ) )
+        {
+            throw new DatabaseException( $this->getError(), $this->mysql->errno );
+        }
+
+        $retVal = ( FALSE !== $result );
+
         $this->doAction( self::ON_MODIFY_ACTION );
 
-        return $this->filter( self::ON_MODIFY_FILTER, $result, $query );
+        return $this->filter( self::ON_MODIFY_FILTER, $retVal, $query );
+    }
+
+    /**
+     * Creates a prepared statement.
+     *
+     * @param string $query  the query
+     * @param string $types  the variable types
+     * @param array  $params list of argument references
+     *
+     * @action ON_PREPARE_ACTION
+     *
+     * @filter ON_PREPARE_FILTER(4)
+     *
+     * @return Statement the prepared statement
+     */
+    public function prepare( $query, $types, $params )
+    {
+        $statement = new Statement( $this->mysql );
+
+        $statement->prepare( $query );
+
+        array_unshift( $params, $types );
+
+        call_user_func_array( array( $statement, 'bind_param' ), $params );
+
+        $this->doAction( self::ON_PREPARE_ACTION );
+
+        return $this->filter( self::ON_PREPARE_FILTER, $statement, $query, $types, $params );
+    }
+
+    /**
+     * Returns the result from the statement.
+     *
+     * @param Statement $statement the query statement
+     * @param int       $type      type of result to return
+     *
+     * @action ON_GET_RESULTS_ACTION
+     *
+     * @filter ON_GET_RESULTS_FILTER(3)
+     *
+     * @return array list of results
+     */
+    public function getResults( Statement $statement, $type = MYSQLI_ASSOC )
+    {
+        $this->doAction( self::ON_GET_RESULTS_ACTION );
+
+        $data = [ ];
+
+        $results = $statement->get_result( );
+
+        while ( $row = $results->fetch_array( $type ) )
+        {
+            $data[ ] = $row;
+        }
+
+        return $this->filter( self::ON_GET_RESULTS_FILTER, $data, $statement, $type );
     }
 
     /**
@@ -357,18 +435,21 @@ class MySql extends Database
      */
     public function tableExists( $table )
     {
-        $dbName = $this->_database;
-
         $query = "SELECT COUNT(*) AS count FROM information_schema.tables
-                  WHERE table_schema = '$dbName' AND table_name = '$table'";
+                  WHERE table_schema = ? AND table_name = ?";
 
-        $results = $this->query( $query );
+        $params = [ &$this->_database, &$table ];
 
-        $result = ( 0 < $results[ 0 ][ 'count' ] );
+        $statement = $this->prepare( $query, 'ss', $params );
+        $statement->execute( );
+
+        $results = $this->getResults( $statement );
+
+        $result = ( 0 < ( int )$results[ 0 ][ 'count' ] );
 
         $this->doAction( self::ON_TABLE_EXISTS_ACTION );
 
-        return $this->filter( self::ON_TABLE_EXISTS_FILTER, $result, $table );
+        return $this->filter( self::ON_TABLE_EXISTS_FILTER, 0 < $result, $table );
     }
 
     /**
@@ -412,7 +493,7 @@ class MySql extends Database
      *
      * @return bool TRUE on success, FALSE on failure
      */
-    public function createTable( $name, $columns = array(), $charSet = 'utf8',
+    public function createTable( $name, $columns = array( ), $charSet = 'utf8',
         $engine = 'InnoDB', $collation = 'utf8_unicode_ci'
     )
     {
@@ -522,6 +603,7 @@ class MySql extends Database
      * @param string $table table name
      * @param array  $key   foreign key parameters
      *
+     * <pre>
      * $key = array(
      *     'key_name'    => 'fk_self_table,
      *     'self_column' => 'order_id',
@@ -530,6 +612,7 @@ class MySql extends Database
      *     'on_delete'   => SET NULL',
      *     'on_update'   => SET NULL',
      * );
+     * </pre>
      *
      * @action ON_ADD_FOREIGN_KEY_ACTION
      *
@@ -552,14 +635,14 @@ class MySql extends Database
         {
             $delete = $key[ 'on_delete' ];
 
-            $query .= "ON DELETE $delete";
+            $query .= " ON DELETE $delete";
         }
 
         if ( isset( $key[ 'on_update' ] ) )
         {
             $update = $key[ 'on_update' ];
 
-            $query .= "ON UPDATE $update";
+            $query .= " ON UPDATE $update";
         }
 
         $query = trim( $query );
@@ -613,13 +696,17 @@ class MySql extends Database
     {
         $query = 'SELECT CONSTRAINT_SCHEMA, CONSTRAINT_NAME, TABLE_NAME, COLUMN_NAME,
                   REFERENCED_TABLE_SCHEMA, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME
-                  FROM information_schema.KEY_COLUMN_USAGE WHERE `CONSTRAINT_SCHEMA` = \''
-                  . $this->_database . '\' AND `TABLE_NAME` = \'' . $table . '\' AND
-                  `REFERENCED_COLUMN_NAME` IS NOT NULL;';
+                  FROM information_schema.KEY_COLUMN_USAGE WHERE `CONSTRAINT_SCHEMA` = ?
+                  AND `TABLE_NAME` = ? AND `REFERENCED_COLUMN_NAME` IS NOT NULL;';
 
-        $results = $this->query( $query );
+        $params = [ &$this->_database, &$table ];
 
-        $keys = array();
+        $statement = $this->prepare( $query, 'ss', $params );
+        $statement->execute( );
+
+        $results = $this->getResults( $statement );
+
+        $keys = [];
 
         if ( !empty( $results ) )
         {
@@ -663,16 +750,24 @@ class MySql extends Database
         }
 
         $query = "SELECT * FROM information_schema.statistics WHERE table_schema =
-                 '$this->_database' AND table_name = '$table' AND ";
+                 ? AND table_name = ? AND ";
+
+        $params = [ &$this->_database, &$table ];
+        $types  = 'ss';
 
         foreach( $columns as $column )
         {
-            $query .= "column_name = '$column' OR ";
+            $query .= "column_name = ? OR ";
+            $params[] = &$column;
+            $types .= 's';
         }
 
         $query = rtrim( $query, ' OR ' );
 
-        $result = $this->query( $query );
+        $statement = $this->prepare( $query, $types, $params );
+        $statement->execute( );
+
+        $result = $this->getResults( $statement );
 
         $this->doAction( self::ON_INDEX_ACTIONS_ACTION );
 
@@ -738,9 +833,14 @@ class MySql extends Database
     public function getTableIndexes( $table )
     {
         $query = "SELECT * FROM information_schema.statistics WHERE table_schema =
-                 '$this->_database' AND table_name = '$table'";
+                 ? AND table_name = ?";
 
-        $results = $this->query( $query );
+        $params = [ &$this->_database, &$table ];
+
+        $statement = $this->prepare( $query, 'ss', $params );
+        $statement->execute( );
+
+        $results = $this->getResults( $statement );
 
         $indexes = array();
 
@@ -903,6 +1003,9 @@ class MySql extends Database
     const ON_EXECUTE_ACTION                 = 'on_execute_action';
     const ON_MODIFY_ACTION                  = 'on_modify_action';
 
+    const ON_GET_RESULTS_ACTION             = 'on_get_results_action';
+    const ON_PREPARE_ACTION                 = 'on_prepare_action';
+
     const ON_START_TRANSACTION_ACTION       = 'on_start_transaction_action';
     const ON_COMMIT_TRANSACTION_ACTION      = 'on_commit_transaction_action';
     const ON_ROLLBACK_TRANSACTION_ACTION    = 'on_rollback_transaction_action';
@@ -942,6 +1045,9 @@ class MySql extends Database
     const ON_INSERT_FILTER                  = 'on_insert_filter';
     const ON_EXECUTE_FILTER                 = 'on_execute_filter';
     const ON_MODIFY_FILTER                  = 'on_modify_filter';
+
+    const ON_GET_RESULTS_FILTER             = 'on_get_results_filter';
+    const ON_PREPARE_FILTER                 = 'on_prepare_filter';
 
     const ON_START_TRANSACTION_FILTER       = 'on_start_transaction_filter';
     const ON_COMMIT_TRANSACTION_FILTER      = 'on_commit_transaction_filter';

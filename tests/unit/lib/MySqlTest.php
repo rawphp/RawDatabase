@@ -36,6 +36,7 @@
 namespace RawPHP\RawDatabase\Tests;
 
 use RawPHP\RawDatabase\MySql;
+use RawPHP\RawDatabase\Database;
 
 /**
  * MySql Database tests.
@@ -167,7 +168,17 @@ class MySqlTest extends \PHPUnit_Framework_TestCase
      */
     public function testExecute( )
     {
-        $this->markTestIncomplete();
+        $table = 'test_table';
+
+        $this->_createTable( $table );
+
+        $query = "INSERT INTO $table ( test_name, test_value ) VALUES
+            ( 'name1', 'value1' ),
+            ( 'name2', 'value2' )";
+
+        $result = self::$db->execute( $query );
+
+        $this->assertEquals( 2, $result );
     }
 
     /**
@@ -175,7 +186,7 @@ class MySqlTest extends \PHPUnit_Framework_TestCase
      */
     public function testStartTransaction( )
     {
-        $this->markTestIncomplete();
+        $this->markTestIncomplete( );
     }
 
     /**
@@ -183,7 +194,29 @@ class MySqlTest extends \PHPUnit_Framework_TestCase
      */
     public function testCommitTransaction( )
     {
-        $this->markTestIncomplete();
+        $table = 'test_table';
+
+        $this->_createTable( $table );
+
+        self::$db->startTransaction( );
+
+        $query = "INSERT INTO $table ( test_name, test_value ) VALUES
+            ( 'name1', 'value1' )";
+
+        $this->assertEquals( 1, self::$db->execute( $query ) );
+
+        $query = "INSERT INTO $table ( test_name, test_value ) VALUES
+            ( 'name2', 'value2' )";
+
+        $this->assertEquals( 1, self::$db->execute( $query ) );
+
+        self::$db->commitTransaction( );
+
+        $query = "SELECT * FROM $table";
+
+        $results = self::$db->query( $query );
+
+        $this->assertEquals( 2, count( $results ) );
     }
 
     /**
@@ -191,7 +224,29 @@ class MySqlTest extends \PHPUnit_Framework_TestCase
      */
     public function testRollbackTransaction( )
     {
-        $this->markTestIncomplete();
+        $table = 'test_table';
+
+        $this->_createTable( $table );
+
+        self::$db->startTransaction( );
+
+        $query = "INSERT INTO $table ( test_name, test_value ) VALUES
+            ( 'name1', 'value1' )";
+
+        $this->assertEquals( 1, self::$db->execute( $query ) );
+
+        $query = "INSERT INTO $table ( test_name, test_value ) VALUES
+            ( 'name2', 'value2' )";
+
+        $this->assertEquals( 1, self::$db->execute( $query ) );
+
+        self::$db->rollbackTransaction( );
+
+        $query = "SELECT * FROM $table";
+
+        $results = self::$db->query( $query );
+
+        $this->assertEquals( 0, count( $results ) );
     }
 
     /**
@@ -199,7 +254,7 @@ class MySqlTest extends \PHPUnit_Framework_TestCase
      */
     public function testSetTransactionAutoCommit( )
     {
-        $this->markTestIncomplete();
+        $this->markTestIncomplete( );
     }
 
     /**
@@ -304,6 +359,8 @@ class MySqlTest extends \PHPUnit_Framework_TestCase
 
     /**
      * Test dropping a column.
+     *
+     * @expectedException RawPHP\RawDatabase\DatabaseException
      */
     public function testDropColumn( )
     {
@@ -314,16 +371,16 @@ class MySqlTest extends \PHPUnit_Framework_TestCase
 
         $this->assertTrue( self::$db->tableExists( $name ) );
 
+        self::$db->dropColumn( $name, 'test_name' );
+
         $text = self::$db->prepareString( $content );
 
         // insert record with new column
-        $query = "INSERT INTO $name ( test_name ) VALUES ( ";
-        $query .= "'$text', ";
+        $query = "INSERT INTO `$name` ( test_name ) VALUES ( ";
+        $query .= "'$text' ";
         $query .= " )";
 
-        $id = self::$db->insert( $query );
-
-        $this->assertFalse( $id );
+        self::$db->insert( $query );
     }
 
     /**
@@ -454,7 +511,22 @@ class MySqlTest extends \PHPUnit_Framework_TestCase
      */
     public function testAddForeignKey( )
     {
-        $this->markTestIncomplete();
+        $table1 = 'key_table1';
+        $table2 = 'key_table2';
+
+        $this->assertTrue( $this->_createTable( $table1 ) );
+        $this->assertTrue( $this->_createTable( $table2 ) );
+
+        self::$db->addIndex( $table1, [ 'test_name' ], 'my_index1', Database::INDEX_INDEX );
+        self::$db->addIndex( $table2, [ 'test_name' ], 'my_index2', Database::INDEX_INDEX );
+
+        $this->assertTrue(
+            self::$db->addForeignKey( $table1, [
+                'key_name'    => 'key_table_key1',
+                'self_column' => 'test_name',
+                'ref_table'   => $table2,
+                'ref_column'  => 'test_name',
+        ] ) );
     }
 
     /**
@@ -462,7 +534,30 @@ class MySqlTest extends \PHPUnit_Framework_TestCase
      */
     public function testDropForeignKey( )
     {
-        $this->markTestIncomplete();
+        $table1 = 'key_table1';
+        $table2 = 'key_table2';
+
+        $this->assertTrue( $this->_createTable( $table1 ) );
+        $this->assertTrue( $this->_createTable( $table2 ) );
+
+        self::$db->addIndex( $table1, [ 'test_name' ], 'my_index1', Database::INDEX_INDEX );
+        self::$db->addIndex( $table2, [ 'test_name' ], 'my_index2', Database::INDEX_INDEX );
+
+        $this->assertTrue(
+            self::$db->addForeignKey( $table1, [
+                'key_name'    => 'key_table_key',
+                'self_column' => 'test_name',
+                'ref_table'   => $table2,
+                'ref_column'  => 'test_name',
+        ] ) );
+
+        $keys = self::$db->getTableForeignKeys( $table1 );
+
+        $this->assertEquals( 'key_table_key', $keys[ 0 ][ 'key_name' ] );
+
+        self::$db->dropForeignKey( $table1, 'key_table_key' );
+
+        $this->assertTrue( empty( self::$db->getTableForeignKeys( $table1 ) ) );
     }
 
     /**
@@ -470,7 +565,42 @@ class MySqlTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetTableForeignKeys( )
     {
-        $this->markTestIncomplete();
+        $table1 = 'key_table1';
+        $table2 = 'key_table2';
+
+        $this->assertTrue( $this->_createTable( $table1 ) );
+        $this->assertTrue( $this->_createTable( $table2 ) );
+
+        self::$db->addIndex( $table1, [ 'test_name' ], 'my_index1', Database::INDEX_INDEX );
+        self::$db->addIndex( $table1, [ 'test_value' ], 'my_index2', Database::INDEX_INDEX );
+        self::$db->addIndex( $table2, [ 'test_name' ], 'my_index3', Database::INDEX_INDEX );
+        self::$db->addIndex( $table2, [ 'test_value' ], 'my_index4', Database::INDEX_INDEX );
+
+        $this->assertTrue(
+            self::$db->addForeignKey( $table1, array(
+                'key_name'    => 'key_table_key1',
+                'self_column' => 'test_name',
+                'ref_table'   => $table2,
+                'ref_column'  => 'test_name',
+        ) ) );
+
+        $this->assertTrue(
+            self::$db->addForeignKey( $table1, array(
+                'key_name'    => 'key_table_key2',
+                'self_column' => 'test_value',
+                'ref_table'   => $table2,
+                'ref_column'  => 'test_value',
+                'on_delete'   => 'SET NULL',
+                'on_update'   => 'SET NULL',
+        ) ) );
+
+        $keys = self::$db->getTableForeignKeys( $table1 );
+
+        $this->assertNotNull( $keys );
+        $this->assertEquals( 2, count( $keys ) );
+
+        $this->assertEquals( 'key_table_key1', $keys[ 0 ][ 'key_name' ] );
+        $this->assertEquals( 'key_table_key2', $keys[ 1 ][ 'key_name' ] );
     }
 
     /**
@@ -491,20 +621,24 @@ class MySqlTest extends \PHPUnit_Framework_TestCase
      *
      * @param string $name table name
      * @param bool   $drop whether to drop table when done
+     *
+     * @return bool TRUE on success, FALSE on failure
      */
     private function _createTable( $name, $drop = TRUE )
     {
         $columns = array(
-            'test_id' => 'INTEGER(11) PRIMARY KEY AUTO_INCREMENT NOT NULL',
-            'test_name' => 'VARCHAR(64) NOT NULL',
+            'test_id'    => 'INTEGER(11) PRIMARY KEY AUTO_INCREMENT NOT NULL',
+            'test_name'  => 'VARCHAR(64) NOT NULL',
             'test_value' => 'VARCHAR(128) NULL',
         );
 
-        self::$db->createTable( $name, $columns );
+        $retval = self::$db->createTable( $name, $columns );
 
         if ( $drop )
         {
             $this->_tables[] = $name;
         }
+
+        return $retval;
     }
 }

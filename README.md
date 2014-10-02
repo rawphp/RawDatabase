@@ -99,6 +99,9 @@ Please submit bug reports, suggestions and pull requests to the [GitHub issue tr
 
 ## Changelog
 
+#### 02-10-2014
+- Added `prepare()` and `getResults()` methods for prepared statements.
+
 #### 22-09-2014
 - Updated for PHP 5.3.
 - Renamed Database to Mysql
