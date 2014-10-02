@@ -4,6 +4,8 @@
 [![Latest Stable Version](https://poser.pugx.org/rawphp/raw-database/v/stable.svg)](https://packagist.org/packages/rawphp/raw-database) [![Total Downloads](https://poser.pugx.org/rawphp/raw-database/downloads.svg)](https://packagist.org/packages/rawphp/raw-database) 
 [![Latest Unstable Version](https://poser.pugx.org/rawphp/raw-database/v/unstable.svg)](https://packagist.org/packages/rawphp/raw-database) [![License](https://poser.pugx.org/rawphp/raw-database/license.svg)](https://packagist.org/packages/rawphp/raw-database)
 
+[![SensioLabsInsight](https://insight.sensiolabs.com/projects/f621cc2c-73db-48db-84fc-276b5b428117/big.png)](https://insight.sensiolabs.com/projects/f621cc2c-73db-48db-84fc-276b5b428117)
+
 ## Package Features
 - Query your database with `query( )`
 - Insert records with `insert( )`
