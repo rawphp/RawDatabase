@@ -35,6 +35,7 @@
 
 namespace RawPHP\RawDatabase\Tests;
 
+use Exception;
 use PHPUnit_Framework_TestCase;
 use RawPHP\RawDatabase\Contract\IDatabase;
 use RawPHP\RawDatabase\MySql;
@@ -343,14 +344,18 @@ class MySqlTest extends PHPUnit_Framework_TestCase
 
         $this->assertTrue( self::$db->tableExists( $name ) );
 
-        //die();
-
         self::$db->dropColumn( $name, 'test_name' );
 
         // insert record with new column
         $query = "INSERT INTO `$name` ( test_name ) VALUES ( ? );";
 
-        $result = self::$db->insert( $query, [ $content ] );
+        try
+        {
+            $result = self::$db->insert( $query, [ $content ] );
+        }
+        catch ( Exception $e )
+        {
+        }
 
         $this->assertFalse( $result );
     }
