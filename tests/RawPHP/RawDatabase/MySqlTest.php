@@ -352,12 +352,12 @@ class MySqlTest extends PHPUnit_Framework_TestCase
         try
         {
             $result = self::$db->insert( $query, [ $content ] );
+
+            $this->assertFalse( $result );
         }
         catch ( Exception $e )
         {
         }
-
-        $this->assertFalse( $result );
     }
 
     /**
