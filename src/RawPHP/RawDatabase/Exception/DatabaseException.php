@@ -23,28 +23,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  *
- * PHP version 5.3
+ * PHP version 5.4
  *
  * @category  PHP
- * @package   RawPHP
- * @author    Tom Kaczohca <tom@rawphp.org>
- * @copyright 2014 Tom Kaczocha
- * @license   http://rawphp.org/license.txt MIT
- * @link      http://rawphp.org/
- */
-
-namespace RawPHP\RawDatabase;
-
-/**
- * Statement
- *
- * @category  PHP
- * @package   RawPHP
+ * @package   RawPHP\RawDatabase\Exception
  * @author    Tom Kaczocha <tom@rawphp.org>
  * @copyright 2014 Tom Kaczocha
  * @license   http://rawphp.org/license.txt MIT
  * @link      http://rawphp.org/
  */
-class Statement extends \mysqli_stmt
+
+namespace RawPHP\RawDatabase\Exception;
+
+use RawPHP\RawSupport\Exception\RawException;
+
+/**
+ * Exception thrown when there are problems with the database.
+ *
+ * @category  PHP
+ * @package   RawPHP\RawDatabase\Exception
+ * @author    Tom Kaczocha <tom@rawphp.org>
+ * @copyright 2014 Tom Kaczocha
+ * @license   http://rawphp.org/license.txt MIT
+ * @link      http://rawphp.org/
+ */
+class DatabaseException extends RawException
 {
 }

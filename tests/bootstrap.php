@@ -23,24 +23,23 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  * 
- * PHP version 5.3
+ * PHP version 5.4
  * 
  * @category  PHP
- * @package   RawPHP/RawDatabase
+ * @package   RawPHP\RawDatabase\Tests
  * @author    Tom Kaczohca <tom@rawphp.org>
  * @copyright 2014 Tom Kaczocha
  * @license   http://rawphp.org/license.txt MIT
  * @link      http://rawphp.org/
  */
 
-use RawPHP\RawYaml\Yaml;
-
 defined( 'DS' )             || define( 'DS', DIRECTORY_SEPARATOR );
-defined( 'SUPPORT_DIR' )    || define( 'SUPPORT_DIR', dirname( __FILE__ ) . DS . '_support' . DS );
+defined( 'SUPPORT_DIR' )    || define( 'SUPPORT_DIR', dirname( __FILE__ ) . DS . 'support' . DS );
 
-require_once dirname( dirname( __FILE__ ) ) . DS . 'vendor' . DS . 'autoload.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
-$yaml = new Yaml( );
-$config = $yaml->load( SUPPORT_DIR . 'config.yml' );
+global $config;
+
+$config = include_once SUPPORT_DIR . 'config.php';
 
 echo PHP_EOL . PHP_EOL . '************* BOOTSTRAP ********************' . PHP_EOL . PHP_EOL;

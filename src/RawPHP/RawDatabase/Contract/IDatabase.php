@@ -23,132 +23,89 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  *
- * PHP version 5.3
+ * PHP version 5.4
  *
  * @category  PHP
- * @package   RawPHP/RawDatabase
- * @author    Tom Kaczohca <tom@rawphp.org>
+ * @package   RawPHP\RawDatabase\Contract
+ * @author    Tom Kaczocha <tom@rawphp.org>
  * @copyright 2014 Tom Kaczocha
  * @license   http://rawphp.org/license.txt MIT
  * @link      http://rawphp.org/
  */
 
-namespace RawPHP\RawDatabase;
+namespace RawPHP\RawDatabase\Contract;
+
+use Exception;
+use RawPHP\RawDatabase\Exception\DatabaseException;
 
 /**
  * The database interface.
  *
  * @category  PHP
- * @package   RawPHP/RawDatabase
- * @author    Tom Kaczohca <tom@rawphp.org>
+ * @package   RawPHP\RawDatabase\Contract
+ * @author    Tom Kaczocha <tom@rawphp.org>
  * @copyright 2014 Tom Kaczocha
  * @license   http://rawphp.org/license.txt MIT
  * @link      http://rawphp.org/
  */
 interface IDatabase
 {
+    const INDEX_INDEX = 'INDEX';
+    const INDEX_UNIQUE = 'UNIQUE';
+    const INDEX_PRIMARY_KEY = 'PRIMARY KEY';
+    const INDEX_FULL_TEXT = 'FULLTEXT';
+    const INDEX_SPATIAL = 'SPATIAL';
+
     /**
-     * Initialises the database.
+     * Initialises the database and creates a new
+     * connection.
      *
      * @param array $config configuration array
      *
-     * @action ON_BEFORE_INIT_ACTION
-     * @action ON_AFTER_INIT_ACTION
+     * @throws DatabaseException
      */
     public function init( $config );
-
-    /**
-     * Returns the last mysql error.
-     *
-     * @action ON_GET_ERROR_ACTION
-     *
-     * @filter ON_GET_ERROR_FILTER(1)
-     *
-     * @return string last error
-     */
-    public function getError();
 
     /**
      * Call this function when you're expecting a result
      * from queries like SELECT.
      *
      * @param string $query the query string
-     *
-     * @action ON_QUERY_ACTION
-     *
-     * @filter ON_QUERY_FILTER(2)
+     * @param array  $data
      *
      * @return mixed list of results or FALSE
      */
-    public function query( $query );
+    public function query( $query, array $data = [ ] );
 
     /**
      * Inserts a record into the database.
      *
      * @param string $query the query string
-     *
-     * @action ON_INSERT_ACTION
-     *
-     * @filter ON_INSERT_FILTER(2)
+     * @param array  $data
      *
      * @return mixed inserted ID on success, FALSE on failure
      */
-    public function insert( $query );
+    public function insert( $query, array $data = [ ] );
 
     /**
      * Executes a database query which does not return a value.
      *
      * @param string $query the query
+     * @param array  $data
      *
-     * @action ON_EXECUTE_ACTION
-     *
-     * @filter ON_EXECUTE_FILTER(2)
-     *
-     * @return mixed number of affected rows on success, FALSE on failure
+     * @return bool|int number of affected rows on success, FALSE on failure
      */
-    public function execute( $query );
+    public function execute( $query, array $data = [ ] );
 
     /**
      * Executes database modification query.
      *
      * @param string $query the query
-     *
-     * @action ON_MODIFY_ACTION
-     *
-     * @filter ON_MODIFY_FILTER(2)
+     * @param array  $data
      *
      * @return bool TRUE on success, FALSE on failure
      */
-    public function modify( $query );
-
-    /**
-     * Creates a prepared statement.
-     *
-     * @param string $query  the query
-     * @param string $types  the variable types
-     * @param array  $params list of argument references
-     *
-     * @action ON_PREPARE_ACTION
-     *
-     * @filter ON_PREPARE_FILTER(4)
-     *
-     * @return Statement the prepared statement
-     */
-    public function prepare( $query, $types, $params );
-
-    /**
-     * Returns the result from the statement.
-     *
-     * @param Statement $statement the query statement
-     * @param int       $type      type of result to return
-     *
-     * @action ON_GET_RESULTS_ACTION
-     *
-     * @filter ON_GET_RESULTS_FILTER(3)
-     *
-     * @return array list of results
-     */
-    public function getResults( Statement $statement, $type = MYSQLI_ASSOC );
+    public function modify( $query, array $data = [ ] );
 
     /**
      * Starts a database transaction.
@@ -157,44 +114,28 @@ interface IDatabase
      * disabled. You can disable AUTO COMMIT by calling
      * <code>setTransactionAutoCommit( FALSE )</code> after calling this method.
      *
-     * @action ON_START_TRANSACTION_ACTION
-     *
-     * @filter ON_START_TRANSACTION_FILTER(1)
-     *
      * @return bool TRUE on success, FALSE on failure
      */
-    public function startTransaction( );
+    public function startTransaction();
 
     /**
      * Commits a database transaction.
      *
-     * @action ON_COMMIT_TRANSACTION_ACTION
-     *
-     * @filter ON_COMMIT_TRANSACTION_FILTER(1)
-     *
      * @return bool TRUE on success, FALSE on failure
      */
-    public function commitTransaction( );
+    public function commitTransaction();
 
     /**
      * Reverses a database transaction.
      *
-     * @action ON_ROLLBACK_TRANSACTION_ACTION
-     *
-     * @filter ON_ROLLBACK_TRANSACTION_FILTER(1)
-     *
      * @return bool TRUE on success, FALSE on failure
      */
-    public function rollbackTransaction( );
+    public function rollbackTransaction();
 
     /**
      * Sets the AUTO COMMIT option.
      *
      * @param bool $autoCommit whether auto commit should be on
-     *
-     * @action ON_SET_TRANSACTION_AUTO_COMMIT_ACTION
-     *
-     * @filter ON_SET_TRANSACTION_AUTO_COMMIT_FILTER(2)
      *
      * @return bool TRUE on success, FALSE on failure
      */
@@ -205,10 +146,6 @@ interface IDatabase
      *
      * @param string $table table name
      *
-     * @action ON_TABLE_EXISTS_ACTION
-     *
-     * @filter ON_TABLE_EXISTS_FILTER(2)
-     *
      * @return bool TRUE if table exists, else FALSE
      */
     public function tableExists( $table );
@@ -217,11 +154,6 @@ interface IDatabase
      * Deletes all records from a table.
      *
      * @param string $table table name
-     *
-     * @action ON_BEFORE_TRUNCATE_TABLE_ACTION
-     * @action ON_AFTER_TRUNCATE_TABLE_ACTION
-     *
-     * @filter ON_TRUNCATE_TABLE_FILTER(2)
      *
      * @return bool TRUE on success, FALSE on failure
      */
@@ -236,26 +168,16 @@ interface IDatabase
      * @param string $engine    database engine - defaults to 'InnoDB'
      * @param string $collation default collation - defaults to 'utf8_unicode_ci'
      *
-     * @action ON_BEFORE_CREATE_TABLE_ACTION
-     * @action ON_AFTER_CREATE_TABLE_ACTION
-     *
-     * @filter ON_CREATE_TABLE_FILTER(6)
-     *
      * @return bool TRUE on success, FALSE on failure
      */
-    public function createTable( $name, $columns = array(), $charSet = 'utf8',
-        $engine = 'InnoDB', $collation = 'utf8_unicode_ci'
+    public function createTable( $name, $columns = [ ], $charSet = 'utf8',
+                                 $engine = 'InnoDB', $collation = 'utf8_unicode_ci'
     );
 
     /**
      * Deletes a table from the database.
      *
      * @param string $table table name
-     *
-     * @action ON_BEFORE_DROP_TABLE_ACTION
-     * @action ON_AFTER_DROP_TABLE_ACTION
-     *
-     * @filter ON_DROP_TABLE_FILTER(2)
      *
      * @return bool TRUE on success, FALSE on failure
      */
@@ -268,10 +190,6 @@ interface IDatabase
      * @param string $name  new column name
      * @param string $type  column type definition
      *
-     * @action ON_ADD_COLUMN_ACTION
-     *
-     * @filter ON_ADD_COLUMN_FILTER(4)
-     *
      * @return bool TRUE on success, FALSE on failure
      */
     public function addColumn( $table, $name, $type );
@@ -281,10 +199,6 @@ interface IDatabase
      *
      * @param string $table table name
      * @param string $name  column name to drop
-     *
-     * @action ON_DROP_COLUMN_ACTION
-     *
-     * @filter ON_DROP_COLUMN_FILTER(3)
      *
      * @return bool TRUE on success, FALSE on failure
      */
@@ -307,24 +221,15 @@ interface IDatabase
      *     'on_update'   => SET NULL',
      * );
      *
-     * @action ON_ADD_FOREIGN_KEY_ACTION
-     *
-     * @filter ON_ADD_FOREIGN_KEY_FILTER(3)
-     *
      * @return bool TRUE on success, FALSE on failure
      */
-    public function addForeignKey( $table, $key = array() );
+    public function addForeignKey( $table, $key = [ ] );
 
     /**
      * Deletes a foreign key from a table.
      *
      * @param string $table   table name
      * @param string $keyName key name
-     *
-     * @action ON_BEFORE_DROP_FOREIGN_KEY_ACTION
-     * @action ON_AFTER_DROP_FOREIGN_KEY_ACTION
-     *
-     * @filter ON_DROP_FOREIGN_KEY_FILTER(3)
      *
      * @return bool TRUE on success, FALSE on failure
      */
@@ -334,10 +239,6 @@ interface IDatabase
      * Returns a list of foreign keys for a table.
      *
      * @param string $table table name
-     *
-     * @action ON_GET_TABLE_FOREIGN_KEYS_ACTION
-     *
-     * @filter ON_GET_TABLE_FOREIGNKEYS_FILTER(2)
      *
      * @return array list of foreign keys
      */
@@ -349,13 +250,9 @@ interface IDatabase
      * @param string $table   table name
      * @param array  $columns the table column names
      *
-     * @action ON_INDEX_ACTIONS_ACTION
-     *
-     * @filter ON_INDEX_ACTIONS_FILTER(3)
-     *
      * @return bool TRUE if index exists, else FALSE
      */
-    public function indexExists( $table, $columns = array() );
+    public function indexExists( $table, $columns = [ ] );
 
     /**
      * Adds an index to a table.
@@ -365,24 +262,16 @@ interface IDatabase
      * @param string $name    optional index name
      * @param string $type    type of index to create ( defaults to normal )
      *
-     * @action ON_ADD_INDEX_ACTION
-     *
-     * @filter ON_ADD_INDEX_FILTER(5)
-     *
      * @return bool TRUE on success, FALSE on failure
      *
      * @throws Exception if columns is not an array
      */
-    public function addIndex( $table, $columns, $name = '', $type = self::INDEX_INDEX );
+    public function addIndex( $table, $columns, $name = '', $type = IDatabase::INDEX_INDEX );
 
     /**
      * Returns a list of indexes for a table.
      *
      * @param string $table table name
-     *
-     * @action ON_GET_TABLE_INDEXES_ACTION
-     *
-     * @filter ON_GET_TABLE_INDEXES_FILTER(2)
      *
      * @return array list of indexes
      */
@@ -393,11 +282,6 @@ interface IDatabase
      *
      * @param string $table table name
      * @param string $name  index name
-     *
-     * @action ON_BEFORE_DROP_INDEX_ACTION
-     * @action ON_AFTER_DROP_INDEX_ACTION
-     *
-     * @filter ON_DROP_INDEX_FILTER(3)
      *
      * @return bool TRUE on success, FALSE on failure
      */
@@ -411,12 +295,7 @@ interface IDatabase
      *
      * @param mixed $tables table names
      *
-     * @see http://dev.mysql.com/doc/refman/5.1/en/lock-tables.html
-     *
-     * @action ON_BEFORE_LOCK_TABLES_ACTION
-     * @action ON_AFTER_LOCK_TABLES_ACTION
-     *
-     * @filter ON_LOCK_TABLES_FILTER(2)
+     * @see    http://dev.mysql.com/doc/refman/5.1/en/lock-tables.html
      *
      * @return bool TRUE on success, FALSE on failure
      */
@@ -425,25 +304,9 @@ interface IDatabase
     /**
      * Removes all locks that the program holds on the database.
      *
-     * @see http://dev.mysql.com/doc/refman/5.1/en/lock-tables.html
-     *
-     * @action ON_BEFORE_UNLOCK_TABLES_ACTION
-     * @action ON_AFTER_UNLOCK_TABLES_ACTION
-     *
-     * @filter ON_UNLOCK_TABLES_FILTER(1)
+     * @see    http://dev.mysql.com/doc/refman/5.1/en/lock-tables.html
      *
      * @return bool TRUE on success, FALSE on failure
      */
-    public function unlockTables( );
-
-    /**
-     * Escapes a string and makes it ready to insert into the database.
-     *
-     * @param string $string the string to prepare
-     *
-     * @filter ON_PREPARE_STRING_FILTER(2)
-     *
-     * @return string to prepared string
-     */
-    public function prepareString( $string );
+    public function unlockTables();
 }
