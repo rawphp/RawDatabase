@@ -60,7 +60,7 @@ class MsSql extends Database
      *
      * @throws DatabaseException
      */
-    public function init( $config )
+    public function connect( $config )
     {
         throw new NotImplementedException();
     }

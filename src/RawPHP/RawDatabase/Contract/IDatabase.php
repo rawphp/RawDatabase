@@ -64,7 +64,14 @@ interface IDatabase
      *
      * @throws DatabaseException
      */
-    public function init( $config );
+    public function connect( $config );
+
+    /**
+     * Close the database connection.
+     *
+     * @throws DatabaseException
+     */
+    public function close();
 
     /**
      * Call this function when you're expecting a result

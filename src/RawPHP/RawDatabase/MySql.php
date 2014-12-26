@@ -51,11 +51,6 @@ use RawPHP\RawDatabase\Exception\DatabaseException;
  */
 class MySql extends Database
 {
-    public function __construct( array $config = [ ] )
-    {
-        $this->init( $config );
-    }
-
     /**
      * Initialises the database and creates a new
      * connection.
@@ -64,7 +59,7 @@ class MySql extends Database
      *
      * @throws DatabaseException
      */
-    public function init( $config = NULL )
+    public function connect( $config = NULL )
     {
         if ( $config !== NULL )
         {
@@ -178,7 +173,7 @@ class MySql extends Database
      */
     public function truncateTable( $table )
     {
-        $this->query = "TRUNCATE TABLE `$table`;";
+        $this->query = "TRUNCATE TABLE $table;";
 
         return $this->modify( $this->query );
     }
@@ -224,7 +219,7 @@ class MySql extends Database
      */
     public function dropTable( $table )
     {
-        $this->query = "DROP TABLE IF EXISTS `$table`;";
+        $this->query = "DROP TABLE IF EXISTS $table;";
 
         return $this->modify( $this->query );
     }
@@ -240,8 +235,8 @@ class MySql extends Database
      */
     public function addColumn( $table, $name, $type )
     {
-        $query = "ALTER TABLE `$table` ADD ";
-        $query .= "`$name` $type;";
+        $query = "ALTER TABLE $table ADD ";
+        $query .= "$name $type;";
 
         return $this->modify( $query );
     }
@@ -256,7 +251,7 @@ class MySql extends Database
      */
     public function dropColumn( $table, $name )
     {
-        $query = "ALTER TABLE `$table` DROP COLUMN `$name`;";
+        $query = "ALTER TABLE $table DROP COLUMN $name;";
 
         return $this->modify( $query );
     }
@@ -289,9 +284,9 @@ class MySql extends Database
         $refTable = $key[ 'ref_table' ];
         $refCol   = $key[ 'ref_column' ];
 
-        $query = "ALTER TABLE `$table` ";
-        $query .= "ADD CONSTRAINT `$keyName` FOREIGN KEY ";
-        $query .= "( `$selfCol` ) REFERENCES `$refTable` ( `$refCol` )";
+        $query = "ALTER TABLE $table ";
+        $query .= "ADD CONSTRAINT $keyName FOREIGN KEY ";
+        $query .= "( $selfCol ) REFERENCES $refTable ( $refCol )";
 
         if ( isset( $key[ 'on_delete' ] ) )
         {
@@ -323,7 +318,7 @@ class MySql extends Database
      */
     public function dropForeignKey( $table, $keyName )
     {
-        $query = "ALTER TABLE `$table` DROP FOREIGN KEY $keyName";
+        $query = "ALTER TABLE $table DROP FOREIGN KEY $keyName";
 
         return $this->modify( $query );
     }
@@ -339,8 +334,8 @@ class MySql extends Database
     {
         $query = 'SELECT CONSTRAINT_SCHEMA, CONSTRAINT_NAME, TABLE_NAME, COLUMN_NAME,
                   REFERENCED_TABLE_SCHEMA, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME
-                  FROM information_schema.KEY_COLUMN_USAGE WHERE `CONSTRAINT_SCHEMA` = ?
-                  AND `TABLE_NAME` = ? AND `REFERENCED_COLUMN_NAME` IS NOT NULL;';
+                  FROM information_schema.KEY_COLUMN_USAGE WHERE CONSTRAINT_SCHEMA = ?
+                  AND TABLE_NAME = ? AND REFERENCED_COLUMN_NAME IS NOT NULL;';
 
         $params = [ $this->name, $table ];
 
@@ -428,16 +423,9 @@ class MySql extends Database
             throw new Exception( 'columns parameter must be an array' );
         }
 
-        $query = "ALTER TABLE `$table` ADD $type $name ( ";
+        $cols = $this->prepareIndexName( $columns, $name );
 
-        foreach ( $columns as $column )
-        {
-            $query .= "`$column`, ";
-        }
-
-        $query = rtrim( $query, ', ' );
-
-        $query .= " )";
+        $query = "ALTER TABLE $table ADD $type $name ( $cols )";
 
         return $this->modify( $query );
     }
@@ -471,25 +459,9 @@ class MySql extends Database
 
             foreach ( $results as $result )
             {
-                if ( NULL === $name )
+                if ( !in_array( $result[ 'INDEX_NAME' ], $indexes ) )
                 {
-                    $name           = $result[ 'INDEX_NAME' ];
-                    $index          = [ ];
-                    $index[ $name ] = [ ];
-                }
-
-                $index[ $name ][ ] = $result[ 'COLUMN_NAME' ];
-
-                $i++;
-
-                if ( $i < count( $results ) && $name !== $results[ $i ][ 'INDEX_NAME' ] )
-                {
-                    $indexes[ ] = $index;
-                    $name       = NULL;
-                }
-                elseif ( $i === count( $results ) )
-                {
-                    $indexes[ ] = $index;
+                    $indexes[ ] = $result[ 'INDEX_NAME' ];
                 }
             }
         }
@@ -507,7 +479,7 @@ class MySql extends Database
      */
     public function dropIndex( $table, $name )
     {
-        $query = "ALTER TABLE `$table` DROP INDEX $name";
+        $query = "ALTER TABLE $table DROP INDEX $name";
 
         return $this->modify( $query );
     }

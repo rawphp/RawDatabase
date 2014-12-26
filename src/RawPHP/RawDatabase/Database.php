@@ -37,6 +37,7 @@ namespace RawPHP\RawDatabase;
 
 use PDO;
 use RawPHP\RawDatabase\Contract\IDatabase;
+use RawPHP\RawDatabase\Exception\DatabaseException;
 
 /**
  * Base database class to be extended by service providers.
@@ -65,6 +66,26 @@ abstract class Database implements IDatabase
     protected $query;
 
     /**
+     * Create a new database instance.
+     *
+     * @param array $config
+     */
+    public function __construct( array $config = [ ] )
+    {
+        $this->connect( $config );
+    }
+
+    /**
+     * Close the database connection.
+     *
+     * @throws DatabaseException
+     */
+    public function close()
+    {
+        $this->database = NULL;
+    }
+
+    /**
      * Get last executed query.
      *
      * @return string
@@ -90,7 +111,7 @@ abstract class Database implements IDatabase
 
         $this->query = $statement->queryString;
 
-        if ( FALSE === $result || 0 === $statement->rowCount() )
+        if ( FALSE === $result )
         {
             return [ ];
         }
@@ -140,6 +161,11 @@ abstract class Database implements IDatabase
 
         $this->query = $statement->queryString;
 
+        if ( FALSE !== $result )
+        {
+            $result = ( int )$statement->rowCount();
+        }
+
         return $result;
     }
 
@@ -159,5 +185,26 @@ abstract class Database implements IDatabase
         $this->query = $statement->queryString;
 
         return ( FALSE !== $result );
+    }
+
+    /**
+     * Prepare columns and index name.
+     *
+     * @param array  $columns
+     * @param string $name
+     *
+     * @return string
+     */
+    protected function prepareIndexName( array $columns, &$name )
+    {
+        $cols = implode( ', ', $columns );
+        $cols = rtrim( $cols, ', ' );
+
+        if ( '' === $name )
+        {
+            $name = 'index_' . str_replace( ', ', '_', $cols );
+        }
+
+        return $cols;
     }
 }
