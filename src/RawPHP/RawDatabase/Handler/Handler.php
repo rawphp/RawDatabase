@@ -87,11 +87,19 @@ abstract class Handler implements IDatabase
      * @param array  $data
      *
      * @return mixed list of results or FALSE
+     *
+     * @throws DatabaseException
      */
     public function query( $query, array $data = [ ] )
     {
         $statement = $this->database->prepare( $query );
-        $result    = $statement->execute( $data );
+
+        if ( FALSE === $statement )
+        {
+            throw new DatabaseException( 'Failed to create prepared statement.' );
+        }
+
+        $result = $statement->execute( $data );
 
         $this->query = $statement->queryString;
 
@@ -110,13 +118,23 @@ abstract class Handler implements IDatabase
      * @param array  $data
      *
      * @return mixed inserted ID on success, FALSE on failure
+     *
+     * @throws DatabaseException
      */
     public function insert( $query, array $data = [ ] )
     {
         $id = NULL;
 
         $statement = $this->database->prepare( $query );
-        $result    = $statement->execute( $data );
+
+        if ( FALSE === $statement )
+        {
+            $this->close();
+
+            throw new DatabaseException( 'Failed to create prepared statement.' );
+        }
+
+        $result = $statement->execute( $data );
 
         $this->query = $statement->queryString;
 
@@ -135,13 +153,23 @@ abstract class Handler implements IDatabase
      * @param array  $data
      *
      * @return bool|int number of affected rows on success, FALSE on failure
+     *
+     * @throws DatabaseException
      */
     public function execute( $query, array $data = [ ] )
     {
         $result = NULL;
 
         $statement = $this->database->prepare( $query );
-        $result    = $statement->execute( $data );
+
+        if ( FALSE === $statement )
+        {
+            $this->close();
+
+            throw new DatabaseException( 'Failed to create prepared statement.' );
+        }
+
+        $result = $statement->execute( $data );
 
         $this->query = $statement->queryString;
 
@@ -160,11 +188,19 @@ abstract class Handler implements IDatabase
      * @param array  $data
      *
      * @return bool TRUE on success, FALSE on failure
+     *
+     * @throws DatabaseException
      */
     public function modify( $query, array $data = [ ] )
     {
         $statement = $this->database->prepare( $query );
-        $result    = $statement->execute( $data );
+
+        if ( FALSE === $statement )
+        {
+            throw new DatabaseException( 'Failed to create prepared statement.' );
+        }
+
+        $result = $statement->execute( $data );
 
         $this->query = $statement->queryString;
 

@@ -155,12 +155,11 @@ class SQLiteTest extends PHPUnit_Framework_TestCase
         $this->_createTable( $table );
 
         $query = "INSERT INTO $table ( test_name, test_value ) VALUES
-            ( 'name1', 'value1' ),
-            ( 'name2', 'value2' )";
+            ( ?, ? )";
 
-        $result = self::$db->execute( $query );
+        $result = self::$db->execute( $query, [ 'name1', 'value1' ] );
 
-        $this->assertEquals( 2, $result );
+        $this->assertEquals( 1, $result );
     }
 
     /**
