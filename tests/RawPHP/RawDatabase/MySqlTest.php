@@ -38,7 +38,7 @@ namespace RawPHP\RawDatabase\Tests;
 use Exception;
 use PHPUnit_Framework_TestCase;
 use RawPHP\RawDatabase\Contract\IDatabase;
-use RawPHP\RawDatabase\MySql;
+use RawPHP\RawDatabase\Database;
 
 /**
  * MySql Database tests.
@@ -52,7 +52,7 @@ use RawPHP\RawDatabase\MySql;
  */
 class MySqlTest extends PHPUnit_Framework_TestCase
 {
-    /** @var MySql */
+    /** @var Database */
     public static $db;
 
     /**
@@ -71,7 +71,7 @@ class MySqlTest extends PHPUnit_Framework_TestCase
 
         parent::setUp();
 
-        self::$db = new MySql( $config );
+        self::$db = new Database( $config );
     }
 
     /**
@@ -102,12 +102,13 @@ class MySqlTest extends PHPUnit_Framework_TestCase
      */
     public function testFailedConnectionThrowsException()
     {
-        new MySql( [
-                       'db_host' => 'localhost',
-                       'db_name' => 'fake_name_db',
-                       'db_user' => 'no_user',
-                       'db_pass' => '',
-                   ]
+        new Database( [
+                          'db_host' => 'localhost',
+                          'db_name' => 'fake_name_db',
+                          'db_user' => 'no_user',
+                          'db_pass' => '',
+                          'handler' => 'mysql',
+                      ]
         );
     }
 

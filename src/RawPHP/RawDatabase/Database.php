@@ -35,9 +35,13 @@
 
 namespace RawPHP\RawDatabase;
 
-use PDO;
+use Exception;
 use RawPHP\RawDatabase\Contract\IDatabase;
 use RawPHP\RawDatabase\Exception\DatabaseException;
+use RawPHP\RawDatabase\Handler\Handler;
+use RawPHP\RawDatabase\Handler\MsSql;
+use RawPHP\RawDatabase\Handler\MySql;
+use RawPHP\RawDatabase\Handler\SQLite;
 
 /**
  * Base database class to be extended by service providers.
@@ -49,29 +53,39 @@ use RawPHP\RawDatabase\Exception\DatabaseException;
  * @license   http://rawphp.org/license.txt MIT
  * @link      http://rawphp.org/
  */
-abstract class Database implements IDatabase
+class Database implements IDatabase
 {
-    /** @var  string */
-    protected $host;
-    /** @var  string */
-    protected $user;
-    /** @var  string */
-    protected $password;
-    /** @var  string */
-    protected $name;
-
-    /** @var  PDO */
-    protected $database;
-    /** @var  string */
-    protected $query;
+    /** @var  Handler */
+    protected $handler;
 
     /**
      * Create a new database instance.
      *
      * @param array $config
+     *
+     * @throws DatabaseException
      */
     public function __construct( array $config = [ ] )
     {
+        if ( !isset( $config[ 'handler' ] ) )
+        {
+            throw new DatabaseException( "Missing 'handler' configuration." );
+        }
+
+        switch ( $config[ 'handler' ] )
+        {
+            case 'mssql':
+                $this->handler = new MsSql();
+                break;
+            case 'sqlite':
+                $this->handler = new SQLite();
+                break;
+            case 'mysql':
+            default:
+                $this->handler = new MySql();
+                break;
+        }
+
         $this->connect( $config );
     }
 
@@ -82,7 +96,7 @@ abstract class Database implements IDatabase
      */
     public function close()
     {
-        $this->database = NULL;
+        $this->handler->close();
     }
 
     /**
@@ -92,7 +106,7 @@ abstract class Database implements IDatabase
      */
     public function getQuery()
     {
-        return $this->query;
+        return $this->handler->getQuery();
     }
 
     /**
@@ -106,17 +120,7 @@ abstract class Database implements IDatabase
      */
     public function query( $query, array $data = [ ] )
     {
-        $statement = $this->database->prepare( $query );
-        $result    = $statement->execute( $data );
-
-        $this->query = $statement->queryString;
-
-        if ( FALSE === $result )
-        {
-            return [ ];
-        }
-
-        return $statement->fetchAll();
+        return $this->handler->query( $query, $data );
     }
 
     /**
@@ -129,19 +133,7 @@ abstract class Database implements IDatabase
      */
     public function insert( $query, array $data = [ ] )
     {
-        $id = NULL;
-
-        $statement = $this->database->prepare( $query );
-        $result    = $statement->execute( $data );
-
-        $this->query = $statement->queryString;
-
-        if ( FALSE !== $result )
-        {
-            $result = ( int ) $this->database->lastInsertId();
-        }
-
-        return $result;
+        return $this->handler->insert( $query, $data );
     }
 
     /**
@@ -154,19 +146,7 @@ abstract class Database implements IDatabase
      */
     public function execute( $query, array $data = [ ] )
     {
-        $result = NULL;
-
-        $statement = $this->database->prepare( $query );
-        $result    = $statement->execute( $data );
-
-        $this->query = $statement->queryString;
-
-        if ( FALSE !== $result )
-        {
-            $result = ( int )$statement->rowCount();
-        }
-
-        return $result;
+        return $this->handler->execute( $query, $data );
     }
 
     /**
@@ -179,32 +159,279 @@ abstract class Database implements IDatabase
      */
     public function modify( $query, array $data = [ ] )
     {
-        $statement = $this->database->prepare( $query );
-        $result    = $statement->execute( $data );
-
-        $this->query = $statement->queryString;
-
-        return ( FALSE !== $result );
+        return $this->handler->modify( $query, $data );
     }
 
     /**
-     * Prepare columns and index name.
+     * Initialises the database and creates a new
+     * connection.
      *
-     * @param array  $columns
-     * @param string $name
+     * @param array $config configuration array
      *
-     * @return string
+     * @throws DatabaseException
      */
-    protected function prepareIndexName( array $columns, &$name )
+    public function connect( $config )
     {
-        $cols = implode( ', ', $columns );
-        $cols = rtrim( $cols, ', ' );
+        $this->handler->connect( $config );
+    }
 
-        if ( '' === $name )
-        {
-            $name = 'index_' . str_replace( ', ', '_', $cols );
-        }
+    /**
+     * Starts a database transaction.
+     *
+     * By default, MYSQL Transactions are set to AUTO_COMMIT the queries if not
+     * disabled. You can disable AUTO COMMIT by calling
+     * <code>setTransactionAutoCommit( FALSE )</code> after calling this method.
+     *
+     * @return bool TRUE on success, FALSE on failure
+     */
+    public function startTransaction()
+    {
+        $this->handler->startTransaction();
+    }
 
-        return $cols;
+    /**
+     * Commits a database transaction.
+     *
+     * @return bool TRUE on success, FALSE on failure
+     */
+    public function commitTransaction()
+    {
+        $this->handler->commitTransaction();
+    }
+
+    /**
+     * Reverses a database transaction.
+     *
+     * @return bool TRUE on success, FALSE on failure
+     */
+    public function rollbackTransaction()
+    {
+        $this->handler->rollbackTransaction();
+    }
+
+    /**
+     * Sets the AUTO COMMIT option.
+     *
+     * @param bool $autoCommit whether auto commit should be on
+     *
+     * @return bool TRUE on success, FALSE on failure
+     */
+    public function setTransactionAutoCommit( $autoCommit = FALSE )
+    {
+        $this->handler->setTransactionAutoCommit( $autoCommit );
+    }
+
+    /**
+     * Checks if a table exists.
+     *
+     * @param string $table table name
+     *
+     * @return bool TRUE if table exists, else FALSE
+     */
+    public function tableExists( $table )
+    {
+        return $this->handler->tableExists( $table );
+    }
+
+    /**
+     * Deletes all records from a table.
+     *
+     * @param string $table table name
+     *
+     * @return bool TRUE on success, FALSE on failure
+     */
+    public function truncateTable( $table )
+    {
+        return $this->handler->truncateTable( $table );
+    }
+
+    /**
+     * Creates a database table.
+     *
+     * @param string $name      table name
+     * @param array  $columns   table column definitions
+     * @param string $charSet   default character set - defaults to 'utf8'
+     * @param string $engine    database engine - defaults to 'InnoDB'
+     * @param string $collation default collation - defaults to 'utf8_unicode_ci'
+     *
+     * @return bool TRUE on success, FALSE on failure
+     */
+    public function createTable( $name, $columns = [ ], $charSet = 'utf8',
+                                 $engine = 'InnoDB', $collation = 'utf8_unicode_ci'
+    )
+    {
+        return $this->handler->createTable( $name, $columns, $charSet, $engine, $collation );
+    }
+
+    /**
+     * Deletes a table from the database.
+     *
+     * @param string $table table name
+     *
+     * @return bool TRUE on success, FALSE on failure
+     */
+    public function dropTable( $table )
+    {
+        return $this->handler->dropTable( $table );
+    }
+
+    /**
+     * Adds a new column to a database table.
+     *
+     * @param string $table table name
+     * @param string $name  new column name
+     * @param string $type  column type definition
+     *
+     * @return bool TRUE on success, FALSE on failure
+     */
+    public function addColumn( $table, $name, $type )
+    {
+        return $this->handler->addColumn( $table, $name, $type );
+    }
+
+    /**
+     * Removes a column from a database table.
+     *
+     * @param string $table table name
+     * @param string $name  column name to drop
+     *
+     * @return bool TRUE on success, FALSE on failure
+     */
+    public function dropColumn( $table, $name )
+    {
+        return $this->handler->dropColumn( $table, $name );
+    }
+
+    /**
+     * Adds a foreign key to a table.
+     *
+     * The key array should be in the following format:
+     *
+     * @param string $table table name
+     * @param array  $key   foreign key parameters
+     *
+     * $key = array(
+     *     'key_name'    => 'fk_self_table,
+     *     'self_column' => 'order_id',
+     *     'ref_table    => 'orders',
+     *     'ref_column'  => 'order_id',
+     *     'on_delete'   => SET NULL',
+     *     'on_update'   => SET NULL',
+     * );
+     *
+     * @return bool TRUE on success, FALSE on failure
+     */
+    public function addForeignKey( $table, $key = [ ] )
+    {
+        return $this->handler->addForeignKey( $table, $key );
+    }
+
+    /**
+     * Deletes a foreign key from a table.
+     *
+     * @param string $table   table name
+     * @param string $keyName key name
+     *
+     * @return bool TRUE on success, FALSE on failure
+     */
+    public function dropForeignKey( $table, $keyName )
+    {
+        return $this->handler->dropForeignKey( $table, $keyName );
+    }
+
+    /**
+     * Returns a list of foreign keys for a table.
+     *
+     * @param string $table table name
+     *
+     * @return array list of foreign keys
+     */
+    public function getTableForeignKeys( $table )
+    {
+        return $this->handler->getTableForeignKeys( $table );
+    }
+
+    /**
+     * Checks if an index exists on a table and its columns.
+     *
+     * @param string $table   table name
+     * @param array  $columns the table column names
+     *
+     * @return bool TRUE if index exists, else FALSE
+     */
+    public function indexExists( $table, $columns = [ ] )
+    {
+        return $this->handler->indexExists( $table, $columns );
+    }
+
+    /**
+     * Adds an index to a table.
+     *
+     * @param string $table   table name
+     * @param array  $columns list of columns
+     * @param string $name    optional index name
+     * @param string $type    type of index to create ( defaults to normal )
+     *
+     * @return bool TRUE on success, FALSE on failure
+     *
+     * @throws Exception if columns is not an array
+     */
+    public function addIndex( $table, $columns, $name = '', $type = IDatabase::INDEX_INDEX )
+    {
+        return $this->handler->addIndex( $table, $columns, $name, $type );
+    }
+
+    /**
+     * Returns a list of indexes for a table.
+     *
+     * @param string $table table name
+     *
+     * @return array list of indexes
+     */
+    public function getTableIndexes( $table )
+    {
+        return $this->handler->getTableIndexes( $table );
+    }
+
+    /**
+     * Drops an index from a table.
+     *
+     * @param string $table table name
+     * @param string $name  index name
+     *
+     * @return bool TRUE on success, FALSE on failure
+     */
+    public function dropIndex( $table, $name )
+    {
+        return $this->handler->dropIndex( $table, $name );
+    }
+
+    /**
+     * Locks a table from being accessed by other clients.
+     *
+     * NOTE: If you require locks on multiple tables at the same time, you need
+     * to pass in all the table names in one call.
+     *
+     * @param mixed $tables table names
+     *
+     * @see    http://dev.mysql.com/doc/refman/5.1/en/lock-tables.html
+     *
+     * @return bool TRUE on success, FALSE on failure
+     */
+    public function lockTables( $tables )
+    {
+        return $this->handler->lockTables( $tables );
+    }
+
+    /**
+     * Removes all locks that the program holds on the database.
+     *
+     * @see    http://dev.mysql.com/doc/refman/5.1/en/lock-tables.html
+     *
+     * @return bool TRUE on success, FALSE on failure
+     */
+    public function unlockTables()
+    {
+        return $this->handler->unlockTables();
     }
 }

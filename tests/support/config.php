@@ -7,4 +7,5 @@ return
         'db_user' => 'root',
         'db_pass' => '',
         'db_host' => 'localhost',
+        'handler' => 'mysql', // [ 'mysql', 'mssql', 'sqlite' ]
     ];
