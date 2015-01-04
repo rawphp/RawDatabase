@@ -74,6 +74,20 @@ interface IDatabase
     public function close();
 
     /**
+     * Get last PDO error.
+     *
+     * @return array
+     */
+    public function getError();
+    
+    /**
+     * Get last executed query.
+     *
+     * @return string
+     */
+    public function getQuery();
+
+    /**
      * Call this function when you're expecting a result
      * from queries like SELECT.
      *

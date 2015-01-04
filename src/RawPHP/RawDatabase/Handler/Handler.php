@@ -72,6 +72,16 @@ abstract class Handler implements IDatabase
     }
 
     /**
+     * Get last PDO error.
+     *
+     * @return array
+     */
+    public function getError()
+    {
+        return $this->database->errorInfo();
+    }
+
+    /**
      * @return string
      */
     public function getQuery()

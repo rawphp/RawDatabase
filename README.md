@@ -55,6 +55,7 @@ $config = array(
     'db_user'   => 'user',
     'db_pass'   => 'password',
     'db_host'   => 'localhost',
+    'handler'   => 'mysql',
 );
 
 // create a new instance of database

@@ -90,6 +90,16 @@ class Database implements IDatabase
     }
 
     /**
+     * Get last PDO error.
+     *
+     * @return array
+     */
+    public function getError()
+    {
+        return $this->handler->getError();
+    }
+
+    /**
      * Close the database connection.
      *
      * @throws DatabaseException
